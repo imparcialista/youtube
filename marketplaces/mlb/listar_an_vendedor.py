@@ -1,6 +1,7 @@
 import time
 import requests
 import json
+import os
 from chaves import id_do_vendedor, access_token
 
 
@@ -61,6 +62,13 @@ def pegar_todos_produtos():
         # Eu recomendo colocar um tempo entre uma execução e outra
         # Fazer muitas requisições em um curto período não é legal
         time.sleep(1)
+
+    time.sleep(1)
+
+    os.remove('./arquivos/lista.json')
+    os.remove('./arquivos/backup.txt')
+
+    time.sleep(1)
 
     with open("./arquivos/lista.json", "w") as outfile:
         json.dump(lista, outfile)
