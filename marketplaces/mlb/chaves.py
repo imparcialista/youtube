@@ -1,0 +1,2 @@
+id_do_vendedor = '227116770'
+access_token = 'APP_USR-2797479857020913-020907-8ec37e89a81ccf4d7b273de89f7d0982-227116770'
