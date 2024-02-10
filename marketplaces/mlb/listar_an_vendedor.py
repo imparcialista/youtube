@@ -16,7 +16,8 @@ id_do_vendedor = access_token[-9:]
 offset = 0
 lista = []
 separador = '-' * 30
-deletar_existentes = True
+deletar_existentes = False
+apenas_itens_ativos = False
 
 
 def ler_json(arquivo):
@@ -27,8 +28,12 @@ def ler_json(arquivo):
 
 
 def fazer_reqs(pagina):
+    if apenas_itens_ativos:
+        filtro = 'include_filters=true&status=active'
+    else:
+        filtro = ''
     url = (f'https://api.mercadolibre.com/users/'
-           f'{id_do_vendedor}/items/search?include_filters=true&status=active&offset='
+           f'{id_do_vendedor}/items/search?{filtro}&offset='
            f'{pagina}')
 
     payload = {}
@@ -50,6 +55,13 @@ def pegar_todos_produtos():
     paginas = 0
     resposta = fazer_reqs(0)
     quantidade_de_an = resposta['paging']['total']
+
+    if quantidade_de_an == 0:
+        print(separador)
+        print('Nenhum anúncio ativo')
+        print('Programa finalizado')
+        print(separador)
+        return
 
     print(separador)
     print(f'Quantidade de anúncios: {quantidade_de_an}')
