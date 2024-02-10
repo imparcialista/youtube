@@ -4,6 +4,7 @@ import json
 import os
 from chaves import id_do_vendedor, access_token
 
+# TODO Criar uma interface visual para gerenciamento dos anúncios
 
 offset = 0
 lista = []
@@ -14,7 +15,7 @@ def ler_json(arquivo):
     data = json.load(arquivo_json)
     return data
 
-def fazer_requisicao(pagina):
+def fazer_reqs(pagina):
     url = f"https://api.mercadolibre.com/users/{id_do_vendedor}/items/search?include_filters=true&status=active&offset={pagina}"
 
     payload = {}
@@ -34,14 +35,14 @@ def fazer_requisicao(pagina):
 
 def pegar_todos_produtos():
     paginas = 0
-    resposta = fazer_requisicao(0)
-    qtd_anuncios = resposta['paging']['total']
+    resposta = fazer_reqs(0)
+    quantidade_de_an = resposta['paging']['total']
 
     print('-' * 30)
-    print(f'Quantidade de anúncios: {qtd_anuncios}')
+    print(f'Quantidade de anúncios: {quantidade_de_an}')
 
-    while qtd_anuncios > 0:
-        qtd_anuncios -= 50
+    while quantidade_de_an > 0:
+        quantidade_de_an -= 50
         paginas += 1
 
     print(f'Páginas para percorrer: {paginas}')
@@ -52,7 +53,7 @@ def pegar_todos_produtos():
 
     for pagina in range(paginas):
         print(f'Página: {pagina + 1} | Offset {pagina * 50}')
-        resposta = fazer_requisicao(pagina * 50)
+        resposta = fazer_reqs(pagina * 50)
         # Aqui vem um resultado de 50 produtos
         # Então vamos adicionar item por item na lista
         for produto in resposta['results']:
