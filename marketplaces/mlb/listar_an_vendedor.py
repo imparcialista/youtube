@@ -2,31 +2,41 @@ import time
 import requests
 import json
 import os
-from chaves import id_do_vendedor, access_token
+from chaves import access_token
+
 
 # TODO Criar uma interface visual para gerenciamento dos anúncios
 
+
+# Dica!
+# Para pegar o id do vendedor de um access token
+# Utilize: id_do_vendedor = access_token[-9:]
+
+id_do_vendedor = access_token[-9:]
 offset = 0
 lista = []
+separador = '-' * 30
+deletar_existentes = True
 
 
 def ler_json(arquivo):
     arquivo_json = open(arquivo, encoding='UTF-8')
     data = json.load(arquivo_json)
+    # Exemplo: ler_json('./arquivos/lista.json')
     return data
 
 
 def fazer_reqs(pagina):
-    url = (f"https://api.mercadolibre.com/users/"
-           f"{id_do_vendedor}/items/search?include_filters=true&status=active&offset="
-           f"{pagina}")
+    url = (f'https://api.mercadolibre.com/users/'
+           f'{id_do_vendedor}/items/search?include_filters=true&status=active&offset='
+           f'{pagina}')
 
     payload = {}
     headers = {
         'Authorization': f'Bearer {access_token}'
     }
 
-    resposta = requests.request("GET", url, headers=headers, data=payload)
+    resposta = requests.request('GET', url, headers=headers, data=payload)
 
     if resposta.status_code != 200:
         print('Falha na requisição')
@@ -41,7 +51,7 @@ def pegar_todos_produtos():
     resposta = fazer_reqs(0)
     quantidade_de_an = resposta['paging']['total']
 
-    print('-' * 30)
+    print(separador)
     print(f'Quantidade de anúncios: {quantidade_de_an}')
 
     while quantidade_de_an > 0:
@@ -49,7 +59,7 @@ def pegar_todos_produtos():
         paginas += 1
 
     print(f'Páginas para percorrer: {paginas}')
-    print('-' * 30)
+    print(separador)
 
     time.sleep(3)
 
@@ -66,19 +76,46 @@ def pegar_todos_produtos():
         # Fazer muitas requisições em um curto período não é legal
         time.sleep(1)
 
+    print(separador)
     time.sleep(1)
 
-    os.remove('./arquivos/lista.json')
-    os.remove('./arquivos/backup.txt')
+    # Se a pasta arquivos não existir, ela será criada aqui
+    if not os.path.exists(f'./arquivos/{id_do_vendedor}'):
+        os.makedirs(f'./arquivos/{id_do_vendedor}')
+        print('Pasta arquivos criada')
+        print(separador)
+        time.sleep(1)
 
-    time.sleep(1)
+    if not os.path.exists(f'./arquivos/backup'):
+        os.makedirs(f'./arquivos/backup')
+        print('Pasta backup criada')
+        print(separador)
+        time.sleep(1)
 
-    with open("./arquivos/lista.json", "w") as outfile:
+    # Aqui ele deleta os arquivos existentes
+    # Caso o valor da variável seja True
+
+    if deletar_existentes:
+        if os.path.exists(f'./arquivos/{id_do_vendedor}/lista-{id_do_vendedor}.json'):
+            os.remove(f'./arquivos/{id_do_vendedor}/lista-{id_do_vendedor}.json')
+
+        if os.path.exists(f'./arquivos/backup-{id_do_vendedor}.txt'):
+            os.remove(f'./arquivos/backup-{id_do_vendedor}.txt')
+        print('Arquivos antigos deletados')
+    else:
+        print('Os arquivos serão substituídos')
+
+    print(separador)
+
+    with open(f'./arquivos/{id_do_vendedor}/lista-{id_do_vendedor}.json', 'w') as outfile:
         json.dump(lista, outfile)
 
-    with open('./arquivos/backup.txt', 'w') as documento:
+    with open(f'./arquivos/backup/backup-{id_do_vendedor}.txt', 'w') as documento:
         for produto in lista:
-            documento.write(f"{produto}\n")
+            documento.write(f'{produto}\n')
+
+    print('Programa finalizado')
+    print(separador)
 
 
 pegar_todos_produtos()
