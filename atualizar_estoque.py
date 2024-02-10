@@ -10,12 +10,13 @@ quantidade = 0          # insira aqui a quantidade para atualizar o estoque
 url = f"https://api.mercadolibre.com/items/MLB{produto}"
 
 payload = json.dumps({
-  "available_quantity": quantidade
+    "available_quantity": quantidade
 })
+
 headers = {
-  'Authorization': f'Bearer {access_token}',
-  'Content-Type': 'application/json',
-  'Accept': 'application/json'
+    'Authorization': f'Bearer {access_token}',
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
 }
 
 response = requests.request("PUT", url, headers=headers, data=payload)

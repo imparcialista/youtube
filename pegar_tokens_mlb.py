@@ -10,8 +10,8 @@ url = "https://api.mercadolibre.com/oauth/token"
 
 payload = f'grant_type=refresh_token&client_id={client_id}&client_secret={client_secret}&refresh_token={refresh_token}'
 headers = {
-  'accept': 'application/json',
-  'content-type': 'application/x-www-form-urlencoded'
+    'accept': 'application/json',
+    'content-type': 'application/x-www-form-urlencoded'
 }
 
 response = requests.request("POST", url, headers=headers, data=payload)

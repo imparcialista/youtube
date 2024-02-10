@@ -15,8 +15,11 @@ def ler_json(arquivo):
     data = json.load(arquivo_json)
     return data
 
+
 def fazer_reqs(pagina):
-    url = f"https://api.mercadolibre.com/users/{id_do_vendedor}/items/search?include_filters=true&status=active&offset={pagina}"
+    url = (f"https://api.mercadolibre.com/users/"
+           f"{id_do_vendedor}/items/search?include_filters=true&status=active&offset="
+           f"{pagina}")
 
     payload = {}
     headers = {
@@ -49,7 +52,6 @@ def pegar_todos_produtos():
     print('-' * 30)
 
     time.sleep(3)
-
 
     for pagina in range(paginas):
         print(f'Página: {pagina + 1} | Offset {pagina * 50}')
