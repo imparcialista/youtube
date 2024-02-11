@@ -16,8 +16,8 @@ id_do_vendedor = access_token[-9:]
 offset = 0
 lista = []
 separador = '-' * 30
-deletar_existentes = False
-apenas_itens_ativos = False
+deletar_existentes = True
+apenas_itens_ativos = True
 
 
 def ler_json(arquivo):
@@ -32,6 +32,7 @@ def fazer_reqs(pagina):
         filtro = 'include_filters=true&status=active'
     else:
         filtro = ''
+
     url = (f'https://api.mercadolibre.com/users/'
            f'{id_do_vendedor}/items/search?{filtro}&offset='
            f'{pagina}')
@@ -63,6 +64,13 @@ def pegar_todos_produtos():
         print(separador)
         return
 
+    if quantidade_de_an > 1000:
+        print(separador)
+        print('Por enquanto funciona apenas com menos de mil anúncios')
+        print('Programa finalizado')
+        print(separador)
+        return
+
     print(separador)
     print(f'Quantidade de anúncios: {quantidade_de_an}')
 
@@ -78,6 +86,7 @@ def pegar_todos_produtos():
     for pagina in range(paginas):
         print(f'Página: {pagina + 1} | Offset {pagina * 50}')
         resposta = fazer_reqs(pagina * 50)
+
         # Aqui vem um resultado de 50 produtos
         # Então vamos adicionar item por item na lista
         for produto in resposta['results']:
