@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<produtosLoja>
+   <produtoLoja>
+       <idLojaVirtual>203481525</idLojaVirtual>
+       <preco>
+          <preco>29,62</preco>
+          <precoPromocional>29,62</precoPromocional>
+       </preco>
+       <idFornecedor></idFornecedor>
+       <idMarca></idMarca>
+       <categoriasLoja>
+          <categoriaLoja>
+             <idCategoria></idCategoria>
+         </categoriaLoja>
+         <categoriaLoja>
+             <idCategoria></idCategoria>
+         </categoriaLoja>
+       </categoriasLoja>
+   </produtoLoja>
+</produtosLoja>
