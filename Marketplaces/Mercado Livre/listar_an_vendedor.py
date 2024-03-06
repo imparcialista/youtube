@@ -17,7 +17,7 @@ offset = 0
 lista = []
 separador = '-' * 30
 deletar_existentes = True
-apenas_itens_ativos = True
+apenas_itens_ativos = False
 
 
 def ler_json(arquivo):
@@ -52,6 +52,53 @@ def fazer_reqs(pagina):
     return resposta
 
 
+def pegar_scroll_id():
+    if apenas_itens_ativos:
+        filtro = 'include_filters=true&status=active'
+    else:
+        filtro = ''
+
+    url = (f'https://api.mercadolibre.com/users/'
+           f'{id_do_vendedor}/items/search?search_type=scan')
+
+    payload = {}
+    headers = {
+        'Authorization': f'Bearer {access_token}'
+    }
+
+    resposta = requests.request('GET', url, headers=headers, data=payload)
+
+    if resposta.status_code != 200:
+        print('Falha na requisição')
+        resposta.raise_for_status()
+
+
+    resposta = resposta.json()
+    print(resposta)     # teste
+    return resposta
+
+
+def proxima_pagina(scroll):
+    url = (f'https://api.mercadolibre.com/users/'
+           f'{id_do_vendedor}/items/search?search_type=scan&scroll_id={scroll}')
+
+    payload = {}
+    headers = {
+        'Authorization': f'Bearer {access_token}'
+    }
+
+    resposta = requests.request('GET', url, headers=headers, data=payload)
+
+    if resposta.status_code != 200:
+        print('Falha na requisição')
+        resposta.raise_for_status()
+
+
+    resposta = resposta.json()
+    print(resposta)     # teste
+    return resposta
+
+
 def pegar_todos_produtos():
     paginas = 0
     resposta = fazer_reqs(0)
@@ -66,8 +113,32 @@ def pegar_todos_produtos():
 
     if quantidade_de_an > 1000:
         print(separador)
-        print('Por enquanto funciona apenas com menos de mil anúncios')
-        print('Programa finalizado')
+        print(f'Quantidade de anúncios: {quantidade_de_an}')
+
+        quantidade_de_an = quantidade_de_an - 1000
+
+        while quantidade_de_an > 0:
+            quantidade_de_an -= 50
+            paginas += 1
+
+        print(f'Páginas para percorrer: {paginas}')
+        print(separador)
+
+        lista_scroll = []
+
+        primeiro_scroll = pegar_scroll_id()
+        lista_scroll.append(primeiro_scroll['scroll_id'])
+
+
+        def gerar_scroll(scroll_anterior):
+            scroll = proxima_pagina(scroll_anterior)
+            lista_scroll.append(scroll['scroll_id'])
+            # return scroll
+
+
+        for pagina in range(paginas):
+            gerar_scroll(lista_scroll[pagina])
+
         print(separador)
         return
 
