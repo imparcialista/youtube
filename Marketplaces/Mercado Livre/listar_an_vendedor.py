@@ -17,7 +17,7 @@ offset = 0
 lista = []
 separador = '-' * 30
 deletar_existentes = True
-apenas_itens_ativos = False
+apenas_itens_ativos = True
 
 
 def ler_json(arquivo):
@@ -121,7 +121,7 @@ def pegar_todos_produtos():
         lista_scroll = []
 
         primeiro_scroll = pegar_scroll_id()
-        print(f'Produtos coletados: {len(primeiro_scroll['results'])}')
+        print(f'Produtos coletados: {len(primeiro_scroll["results"])}')
 
         lista_scroll.append(primeiro_scroll['scroll_id'])
         for produto in primeiro_scroll['results']:
@@ -130,7 +130,7 @@ def pegar_todos_produtos():
 
         def gerar_scroll(scroll_anterior):
             scroll = proxima_pagina(scroll_anterior)
-            print(f'Produtos coletados: {len(scroll['results'])}')
+            print(f'Produtos coletados: {len(scroll["results"])}')
 
             for produto in scroll['results']:
                 lista.append(produto)
