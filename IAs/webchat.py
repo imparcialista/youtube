@@ -1,11 +1,5 @@
-"""
-At the command line, only need to run once to install the package via pip:
-
-$ pip install google-generativeai
-"""
-
+import flet as ft
 import google.generativeai as genai
-from simple_colors import *
 from chaves import api_key
 
 
@@ -54,20 +48,26 @@ convo = model.start_chat(history=[
 ])
 
 
-sair = False
-print('Digite SAIR para sair\n')
+def main(page):
+    def btn_click(e):
 
-convo.send_message('Por favor, se apresente')
-resposta = convo.last.text
-print(blue(resposta, 'bold'))
+        if not pergunta.value:
+            pergunta.error_text = "Por favor escreva uma pergunta"
+            page.update()
+        else:
+            # valor = pergunta.value
+            msg_usuario = pergunta.value
+            convo.send_message(msg_usuario)
+            resposta = convo.last.text
+            txt_resposta = ft.Text(resposta, size=10)
+            page.add(txt_resposta)
 
-while not sair:
-  msg_usuario = input(str('> '))
-  if msg_usuario == 'SAIR':
-    sair = True
+    texto_dica = ft.Text(f"Algumas respostas podem estar erradas", size=15)
+    pergunta = ft.TextField(label="Qual sua pergunta?", width=400, autofocus=True)
+    btn_perguntar = ft.ElevatedButton("Perguntar", on_click=btn_click)
 
-  convo.send_message(msg_usuario)
-  #print(convo.last.text)
-  resposta = convo.last.text
-  print(blue(resposta, 'bold'))
+    # page.add(texto_dica)
+    page.add(texto_dica, pergunta, btn_perguntar)
 
+
+ft.app(target=main, view=ft.AppView.WEB_BROWSER)
