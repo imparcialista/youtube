@@ -4,9 +4,7 @@ import json
 import os
 from chaves import access_token
 
-
 # TODO Criar uma interface visual para gerenciamento dos anúncios
-
 
 # Dica!
 # Para pegar o id do vendedor de um access token
