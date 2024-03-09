@@ -53,6 +53,9 @@ convo = model.start_chat(
 
 
 def main(page) :
+    page.scroll = "always"
+
+
     def btn_click(e) :
 
         if not pergunta.value :
