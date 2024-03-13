@@ -37,9 +37,10 @@ for i, pack in enumerate(lista_geral):
 
     for item in retorno:
         body = item['body']
+        lista.append(body)
         # sku = item['body']['attributes'][9]
         # print('-' * 15)
-        # print(item['body']['attributes'])
+        # print(item['body'])
         '''
         print(item['body']['attributes'][0])  # ['value_name'])
         print(item['body']['attributes'][1])  # ['value_name'])
@@ -50,7 +51,6 @@ for i, pack in enumerate(lista_geral):
         '''
         # print('-' * 15)
         # print(sku)
-        lista.append(body)
 
 retorno = lista
 
