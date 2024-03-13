@@ -10,12 +10,14 @@ from chaves import access_token
 # Para pegar o id do vendedor de um access token
 # Utilize: id_do_vendedor = access_token[-9:]
 
+inicio_timer = time.time()
+
 id_do_vendedor = access_token[-9:]
 offset = 0
 lista = []
 separador = '-' * 30
 deletar_existentes = True
-apenas_itens_ativos = True
+apenas_itens_ativos = False
 
 
 def ler_json(arquivo):
@@ -35,10 +37,10 @@ def fazer_reqs(pagina):
            f'{id_do_vendedor}/items/search?{filtro}&offset='
            f'{pagina}')
 
-    payload = {}
+    payload = { }
     headers = {
         'Authorization': f'Bearer {access_token}'
-    }
+        }
 
     resposta = requests.request('GET', url, headers=headers, data=payload)
 
@@ -54,17 +56,16 @@ def pegar_scroll_id():
     url = (f'https://api.mercadolibre.com/users/'
            f'{id_do_vendedor}/items/search?search_type=scan&limit=100')
 
-    payload = {}
+    payload = { }
     headers = {
         'Authorization': f'Bearer {access_token}'
-    }
+        }
 
     resposta = requests.request('GET', url, headers=headers, data=payload)
 
     if resposta.status_code != 200:
         print('Falha na requisição')
         resposta.raise_for_status()
-
 
     resposta = resposta.json()
     # print(resposta)     # teste
@@ -75,17 +76,16 @@ def proxima_pagina(scroll):
     url = (f'https://api.mercadolibre.com/users/'
            f'{id_do_vendedor}/items/search?search_type=scan&scroll_id={scroll}&limit=100')
 
-    payload = {}
+    payload = { }
     headers = {
         'Authorization': f'Bearer {access_token}'
-    }
+        }
 
     resposta = requests.request('GET', url, headers=headers, data=payload)
 
     if resposta.status_code != 200:
         print('Falha na requisição')
         resposta.raise_for_status()
-
 
     resposta = resposta.json()
     # print(resposta)     # teste
@@ -135,11 +135,12 @@ def pegar_todos_produtos():
 
             lista_scroll.append(scroll['scroll_id'])
 
+
         for pagina in range(paginas):
             gerar_scroll(lista_scroll[pagina])
 
 
-    else:          
+    else:
         resposta = fazer_reqs(0)
         quantidade_de_an = resposta['paging']['total']
 
@@ -211,3 +212,7 @@ def pegar_todos_produtos():
 
 
 pegar_todos_produtos()
+
+fim_timer = time.time()
+tempo_total = fim_timer - inicio_timer
+print(f"Tempo de execução: {tempo_total} segundos")
