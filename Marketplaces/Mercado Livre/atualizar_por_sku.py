@@ -69,10 +69,12 @@ def pegar_produtos(sku):
                 atualizar_estoque(produto, qtd_estoque)
 
 
-sair = False
-while not sair:
-    sku_produto = input('Digite o SKU: ')
-    pegar_produtos(sku_produto)
+def loop_para_alterar():
+    sair = False
+    while not sair:
+        sku_produto = input('Digite o SKU: ')
+        pegar_produtos(sku_produto)
+
 
 fim_timer = time.time()
 tempo_total = fim_timer - inicio_timer

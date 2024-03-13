@@ -45,6 +45,7 @@ def atualizar_estoque(produto, quantidade):
         # resposta.raise_for_status()
     else:
         print(f'{produto} estoque alterado para {quantidade}')
+
     resposta = resposta.json()
 
     return resposta
