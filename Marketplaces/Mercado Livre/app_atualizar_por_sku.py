@@ -29,13 +29,14 @@ def pegar_produtos(sku, qtd):
 
 
 def main(page):
-    page.title = "Atualizar estoque no Mercado Livre"
+    page.scroll = "always"
+    page.title = "Atualizar estoque"
     page.window_title_bar_hidden = False
     page.window_frameless = False
-    page.window_left = 100
-    page.window_top = 100
-    page.window_width = 400
-    page.window_height = 540
+    # page.window_left = 500
+    # page.window_top = 300
+    page.window_width = 300
+    page.window_height = 300
     page.window_always_on_top = False
 
 
@@ -59,14 +60,15 @@ def main(page):
             page.update()
 
 
-    texto_dica = ft.Text(f"Insira o SKU do Mercado Livre", size=25)
-    sku_mlb = ft.TextField(label="Qual o SKU?", width=200, autofocus=True)
+    texto_dica = ft.Text(f'', size=20)
+    sku_mlb = ft.TextField(label="SKU", width=200, autofocus=True)
     qtd_mlb = ft.TextField(label="Quantidade", width=200, value='')
     # access_token_label = ft.TextField(label="Conta", width=200, value=access_token)
     btn_perguntar = ft.ElevatedButton("Atualizar", on_click=btn_click)
 
     # page.add(texto_dica, sku_mlb, qtd_mlb, access_token_label, btn_perguntar)
     page.add(texto_dica, sku_mlb, qtd_mlb, btn_perguntar)
+    # page.add(sku_mlb, qtd_mlb, btn_perguntar)
 
 
 ft.app(target=main)
