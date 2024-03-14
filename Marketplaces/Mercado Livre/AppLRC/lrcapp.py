@@ -2,8 +2,6 @@ import flet as ft
 import requests
 import json
 
-offset = 0
-
 
 def main(page):
     def theme_changed(e):
@@ -21,7 +19,7 @@ def main(page):
     page.theme_mode = ft.ThemeMode.LIGHT
     c = ft.IconButton(
             icon=ft.icons.LIGHT_MODE_SHARP,
-            icon_color='blue400',
+            icon_color='blue',
             icon_size=20,
             tooltip='Mudar tema',
             on_click=theme_changed
@@ -31,8 +29,8 @@ def main(page):
     page.title = 'App Luarco'
     page.window_title_bar_hidden = False
     page.window_frameless = False
-    page.window_width = 400
-    page.window_height = 500
+    page.window_width = 346
+    page.window_height = 492
     page.window_always_on_top = False
 
 
@@ -95,6 +93,24 @@ def main(page):
                             escrever = atualizar_estoque(produto, qtd, access_token_var)
                             lista_resultado.controls.append(escrever)
                     return lista_resultado
+            else:
+                limpar()
+                msg_erro.value = 'Nenhum anúncio encontrado'
+                botoes.disabled = False
+                pr.opacity = 0
+                page.update()
+
+
+    def limpar():
+        msg_erro.value = ''
+        sku_mlb.value = ''
+        qtd_mlb.value = ''
+        page.update()
+        lista.controls.clear()
+        page.update()
+
+    def btn_limpar(e):
+        limpar()
 
 
     def btn_click(e):
@@ -102,7 +118,7 @@ def main(page):
         sku = sku_mlb.value
         qtd = qtd_mlb.value
         if not access_token_label.value:
-            msg_erro.value = 'Por favor insira o Acces Token'
+            msg_erro.value = 'Por favor insira o Access Token'
             page.update()
         elif not sku_mlb.value:
             msg_erro.value = 'Por favor insira um SKU'
@@ -116,31 +132,40 @@ def main(page):
                 msg_erro.value = 'Falha na requisição, altere os valores'
                 page.update()
             else:
-                msg_erro.value = ''
-                sku_mlb.value = ''
-                qtd_mlb.value = ''
-                lista.controls.clear()
+                botoes.disabled = True
+                pr.opacity = 100
+                page.update()
+                btn_limpar(e)
                 qtd = int(qtd)
-                retorno = f'SOLICITAÇÃO DE ALTERAÇÃO\nSKU: {sku} | Estoque: {qtd}\n'
+                retorno = f'SOLICITAÇÃO DE ALTERAÇÃO\nSKU: {sku} | Estoque: {qtd}'
                 txt_resposta = ft.Text(f'{retorno}', size=16, color='blue', weight='bold')
                 lista.controls.append(txt_resposta)
+                botoes.disabled = False
+                pr.opacity = 0
                 lista_nova = pegar_produtos(sku, qtd, access_token)
+                lista.controls.append(ft.Text(''))
                 lista.controls.append(lista_nova)
                 lista.controls.append(ft.Text(''))
+                
                 page.update()
 
 
     texto_dica = ft.Text(f'Atualizar estoque Mercado Livre', size=14, color='blue', weight='bold')
-    msg_erro = ft.Text(f'', size=14, color='red', weight='bold')
-    sku_mlb = ft.TextField(label='SKU', width=150, autofocus=True)
-    qtd_mlb = ft.TextField(label='Quantidade', width=150)
-    qtd_mlb = ft.TextField(label='Quantidade', input_filter=ft.NumbersOnlyInputFilter(), width=150)
-    btn_perguntar = ft.ElevatedButton('Atualizar', on_click=btn_click)
-    valores = ft.Row([sku_mlb, qtd_mlb])
-    inicio = ft.Row([texto_dica, c])
-    access_token_label = ft.TextField(label='Access Token', width=310, value='')
-    lista = ft.ListView(expand=False, spacing=10)
-    page.add(inicio, access_token_label, valores, btn_perguntar, msg_erro, lista)
+    pr = ft.ProgressRing(width=16, height=16, stroke_width = 2, opacity=0, color='blue')
+    inicio = ft.Row([texto_dica, pr, c])
 
+    access_token_label = ft.TextField(label='Access Token', width=310, value='', password=True)
+
+    sku_mlb = ft.TextField(label='SKU', width=150, autofocus=True)
+    qtd_mlb = ft.TextField(label='Quantidade', input_filter=ft.NumbersOnlyInputFilter(), width=150)
+    valores = ft.Row([sku_mlb, qtd_mlb])
+
+    btn_perguntar = ft.ElevatedButton('Atualizar', on_click=btn_click, width=150)
+    btn_limpar_label = ft.ElevatedButton('Limpar', on_click=btn_limpar, width=150)
+    botoes = ft.Row([btn_perguntar, btn_limpar_label])
+
+    msg_erro = ft.Text(f'', size=14, color='red', weight='bold')
+    lista = ft.ListView(expand=False, spacing=10)
+    page.add(inicio, access_token_label, valores, botoes, msg_erro, lista)
 
 ft.app(target=main)
