@@ -17,7 +17,7 @@ offset = 0
 lista = []
 separador = '-' * 30
 deletar_existentes = True
-apenas_itens_ativos = True
+apenas_itens_ativos = False
 
 
 def ler_json(arquivo):
