@@ -37,7 +37,7 @@ def fazer_reqs(pagina):
            f'{id_do_vendedor}/items/search?{filtro}&offset='
            f'{pagina}')
 
-    payload = { }
+    payload = {}
     headers = {
         'Authorization': f'Bearer {access_token}'
         }
@@ -56,7 +56,7 @@ def pegar_scroll_id():
     url = (f'https://api.mercadolibre.com/users/'
            f'{id_do_vendedor}/items/search?search_type=scan&limit=100')
 
-    payload = { }
+    payload = {}
     headers = {
         'Authorization': f'Bearer {access_token}'
         }
@@ -76,7 +76,7 @@ def proxima_pagina(scroll):
     url = (f'https://api.mercadolibre.com/users/'
            f'{id_do_vendedor}/items/search?search_type=scan&scroll_id={scroll}&limit=100')
 
-    payload = { }
+    payload = {}
     headers = {
         'Authorization': f'Bearer {access_token}'
         }
@@ -167,23 +167,23 @@ def pegar_todos_produtos():
 
             # Eu recomendo colocar um tempo entre uma execução e outra
             # Fazer muitas requisições em um curto período não é legal
-            time.sleep(1)
+            # time.sleep(1)
 
     print(separador)
-    time.sleep(1)
+    # time.sleep(1)
 
     # Se a pasta arquivos não existir, ela será criada aqui
     if not os.path.exists(f'./arquivos/{id_do_vendedor}'):
         os.makedirs(f'./arquivos/{id_do_vendedor}')
         print('Pasta arquivos criada')
         print(separador)
-        time.sleep(1)
+        # time.sleep(1)
 
     if not os.path.exists(f'./arquivos/backup'):
         os.makedirs(f'./arquivos/backup')
         print('Pasta backup criada')
         print(separador)
-        time.sleep(1)
+        # time.sleep(1)
 
     # Aqui ele deleta os arquivos existentes
     # Caso o valor da variável seja True
