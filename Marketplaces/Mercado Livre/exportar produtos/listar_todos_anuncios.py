@@ -12,8 +12,7 @@ from chaves import access_token
 id_do_vendedor = access_token[-9:]
 
 # Recomendo que deixe esse como True
-deletar_existentes = True
-gerar_arquivos = False
+gerar_arquivos = True
 apenas_itens_ativos = False
 base = 'https://api.mercadolibre.com'
 
@@ -35,11 +34,15 @@ def fazer_reqs(url):
     resposta = requests.get(f'{url}', headers=headers)
 
     if resposta.status_code != 200:
-        print('Falha na requisição')
+        mensagem('Falha na requisição')
         resposta.raise_for_status()
 
     resposta = resposta.json()
     return resposta
+
+
+nome = fazer_reqs(f'{base}/users/me')
+nome_da_conta = nome['nickname']
 
 
 def pegar_scroll_id():
@@ -55,6 +58,7 @@ def proxima_pagina(scroll):
 
 
 def pegar_todos_produtos():
+    mensagem(f'Conta conectada: {nome_da_conta}')
     inicio_timer = time.time()
     paginas = 0
 
@@ -85,7 +89,7 @@ def pegar_todos_produtos():
 
         lista_scroll = []
         primeiro_scroll = pegar_scroll_id()
-        print(f'IDs coletados: {len(primeiro_scroll["results"])}')
+        mensagem(f'IDs coletados: {len(primeiro_scroll["results"])}')
 
         lista_scroll.append(primeiro_scroll['scroll_id'])
         for produto in primeiro_scroll['results']:
@@ -94,7 +98,7 @@ def pegar_todos_produtos():
 
         def gerar_scroll(scroll_anterior):
             scroll = proxima_pagina(scroll_anterior)
-            print(f'IDs coletados: {len(scroll["results"])}')
+            mensagem(f'IDs coletados: {len(scroll["results"])}')
 
             for id_mlb in scroll['results']:
                 lista.append(id_mlb)
@@ -116,12 +120,10 @@ def pegar_todos_produtos():
 
         mensagem(f'Páginas para percorrer: {paginas}')
 
-        # time.sleep(3)
-
         for pagina in range(paginas):
             url = f'{base}/users/{id_do_vendedor}/items/search?{filtro}&offset={pagina * 50}'
 
-            print(f'Página: {pagina + 1} | Offset {pagina * 50}')
+            mensagem(f'Página: {pagina + 1} | Offset {pagina * 50}')
 
             resposta = fazer_reqs(url)
 
@@ -135,38 +137,36 @@ def pegar_todos_produtos():
 
     if gerar_arquivos:
         # Se a pasta arquivos não existir, ela será criada aqui
-        if not os.path.exists(f'./arquivos/{id_do_vendedor}'):
-            os.makedirs(f'./arquivos/{id_do_vendedor}')
-            mensagem('Pasta arquivos criada')
-
-        if not os.path.exists(f'./arquivos/backup'):
-            os.makedirs(f'./arquivos/backup')
-            mensagem('Pasta backup criada')
+        if not os.path.exists(f'Arquivos/{nome_da_conta}'):
+            os.makedirs(f'Arquivos/{nome_da_conta}')
+            mensagem(f'Pasta {nome_da_conta} criada')
 
         # Aqui ele deleta os arquivos existentes
         # Caso o valor da variável seja True
 
-        # Apagar arquivos
-        if deletar_existentes:
-            if os.path.exists(f'./arquivos/{id_do_vendedor}/lista-{id_do_vendedor}.json'):
-                os.remove(f'./arquivos/{id_do_vendedor}/lista-{id_do_vendedor}.json')
+        arquivo_json = f'Arquivos/{nome_da_conta}/{id_do_vendedor}-ids_mlb.json'
+        arquivo_txt = f'Arquivos/{nome_da_conta}/{id_do_vendedor}-ids_mlb.txt'
 
-            if os.path.exists(f'./arquivos/backup-{id_do_vendedor}.txt'):
-                os.remove(f'./arquivos/backup-{id_do_vendedor}.txt')
-            mensagem('Arquivos antigos deletados')
-        else:
-            mensagem('Os arquivos serão substituídos')
+        # Apagar arquivos
+        if os.path.exists(arquivo_json):
+            os.remove(arquivo_json)
+
+        if os.path.exists(arquivo_txt):
+            os.remove(arquivo_txt)
+
+        # mensagem('Arquivos antigos deletados')
 
         # Gerar arquivos
-        with open(f'./arquivos/{id_do_vendedor}/lista-{id_do_vendedor}.json', 'w') as outfile:
+        with open(arquivo_json, 'w') as outfile:
             json.dump(lista, outfile)
-            mensagem('Arquivo JSON gerado')
+            # mensagem(f'Arquivo JSON com todos os IDS da conta {id_do_vendedor} gerado')
 
-        with open(f'./arquivos/backup/backup-{id_do_vendedor}.txt', 'w') as documento:
+        with open(arquivo_txt, 'w') as documento:
             for produto in lista:
                 documento.write(f'{produto}\n')
-            mensagem('Arquivo TXT gerado')
+            # mensagem(f'Arquivo TXT com todos os IDS da conta {id_do_vendedor} gerado')
 
     fim_timer = time.time()
-    mensagem(f"Programa: Pegar produtos finalizado | Tempo de execução: {fim_timer - inicio_timer} segundos")
+    mensagem(f'{nome_da_conta}: Todos os IDS foram coletados ')
+    mensagem(f'Tempo de execução: {fim_timer - inicio_timer} segundos')
     return lista
