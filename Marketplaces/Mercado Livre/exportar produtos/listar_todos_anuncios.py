@@ -169,4 +169,5 @@ def pegar_todos_produtos():
     fim_timer = time.time()
     mensagem(f'{nome_da_conta}: Todos os IDS foram coletados ')
     mensagem(f'Tempo de execução: {fim_timer - inicio_timer} segundos')
+
     return lista

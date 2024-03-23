@@ -4,9 +4,11 @@ from listar_todos_anuncios import *
 # caso aconteça o erro ao tentar gerar o arquivo excel
 # pip install openpyxl
 
+# Busca todos os produtos da conta selecionada
 pegar_produtos = False
-gerar_os_arquivos = False
-exportar_os_produtos = False
+
+# Gera uma planilha com todos os produtos da conta selecionada
+gerar_os_arquivos = True
 
 if pegar_produtos:
     lista_produtos = pegar_todos_produtos()
@@ -23,10 +25,6 @@ else:
     for linha in referencia:
         linha = linha.replace(f'\n', "")
         lista_produtos.append(linha)
-
-    for i, id_mlb in enumerate(lista_produtos):
-        # mensagem(f'Posição: {i} | Valor: {id_mlb}')
-        pass
 
 
 def exportar_para_planilha(lista_json: list, colunas_drop: list):
@@ -91,10 +89,22 @@ def gerar_arquivos():
         for grupo_de_itens in retorno:
             body = grupo_de_itens['body']
             lista.append(body)
+            atributos = body['attributes']
+
+            # lista_atributos = []
+            for atributo in atributos:
+                if atributo['id'] == 'SELLER_SKU':
+                    sku = atributo['values'][0]['name']
+                    body['attributes'] = sku
+                    break
+                    # lista_atributos.append(sku)
+                    # print(sku)
+                else:
+                    body['attributes'] = ''
 
     retorno = lista
 
-    with open(f'{id_do_vendedor}-backup.txt', 'w') as documento_bkp:
+    with open(f'Arquivos/{nome_da_conta}/{id_do_vendedor}-backup.txt', 'w') as documento_bkp:
         documento_bkp.write(f'{lista_geral}\n')
         mensagem('Arquivo backup.txt gerado')
 
@@ -117,46 +127,8 @@ def gerar_arquivos():
     mensagem(f"Programa: Gerar arquivos finalizado | Tempo de execução: {fim_timer - inicio_timer} segundos")
 
 
-def exportar_produtos():
-    # print(lista_produtos)
-
-    lista_exportar = []
-    lista_teste = ['MLB3563650363', 'MLB3563712043', 'MLB3584534561', 'MLB3584460821', ]
-    # Para testar, utilize essa "lista_teste", depois troque pela "lista_produtos"
-
-    for mlb in lista_teste:
-        produto = fazer_reqs(f'{base}/items/{mlb}')
-        atributos = produto['attributes']
-
-        lista_atributos = []
-        for atributo in atributos:
-            if atributo['id'] == 'SELLER_SKU':
-                sku = atributo['values'][0]['name']
-                lista_atributos.append(sku)
-                print(sku)
-
-        lista_exportar.append(produto)
-
-    '''
-    drop = [
-        'site_id', 'official_store_id', 'user_product_id', 'seller_id', 'category_id', 'inventory_id',
-        'currency_id',
-        'sale_terms', 'buying_mode', 'listing_type_id', 'start_time', 'stop_time', 'end_time', 'expiration_time',
-        'thumbnail_id', 'pictures', 'video_id', 'descriptions', 'accepts_mercadopago',
-        'non_mercado_pago_payment_methods',
-        'international_delivery_mode', 'seller_address', 'seller_contact', 'location', 'geolocation',
-        'coverage_areas',
-        'warnings', 'listing_source', 'variations', 'sub_status', 'warranty', 'parent_item_id',
-        'differential_pricing',
-        'deal_ids', 'automatic_relist', 'start_time', 'stop_time', 'end_time', 'expiration_time']
-    '''
-    drop = ['start_time', 'stop_time', 'end_time', 'expiration_time']
-
-    exportar_para_planilha(lista_exportar, drop)
-
-
 if gerar_os_arquivos:
     gerar_arquivos()
-
-if exportar_os_produtos:
-    exportar_produtos()
+    path = f'Arquivos/{nome_da_conta}/{id_do_vendedor}-planilha-produtos.xlsx'
+    path = os.path.realpath(path)
+    os.startfile(path)
