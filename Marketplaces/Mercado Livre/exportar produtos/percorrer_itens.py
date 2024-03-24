@@ -36,11 +36,16 @@ def exportar_para_planilha(lista_json: list, colunas_drop: list):
     if os.path.exists(planilha):
         os.remove(planilha)
 
+    df['date_created'] = pd.to_datetime(df['date_created'], format='%d/%m/%Y %H:%M:%S')
+    df['last_updated'] = pd.to_datetime(df['last_updated'], format='%d/%m/%Y %H:%M:%S')
+
+    df = df.sort_values(by='last_updated', ascending=False)
+
     df.to_excel(planilha, index=False)
     mensagem(f'Planilha gerada')
 
 
-def gerar_arquivos():
+def gerar_planilha():
     inicio_timer = time.time()
     mensagem(f'Conta conectada: {nome_da_conta}')
     lista_geral = []
@@ -77,8 +82,17 @@ def gerar_arquivos():
         for grupo_de_itens in retorno:
             body = grupo_de_itens['body']
 
-            atributos = body['attributes']
+            envio = body['shipping']['logistic_type']
+            if envio == 'cross_docking':
+                body['shipping'] = 'Normal'
+            elif envio == 'fulfillment':
+                body['shipping'] = 'Full'
+            elif envio == 'not_specified':
+                body['shipping'] = 'Não especificado'
+            else:
+                pass
 
+            atributos = body['attributes']
             for atributo in atributos:
                 if atributo['id'] == 'SELLER_SKU':
                     sku = atributo['values'][0]['name']
@@ -88,11 +102,58 @@ def gerar_arquivos():
                 else:
                     body['attributes'] = ''
 
-            lista_retorno.append(body)
+            if body['status'] == 'active':
+                body['status'] = 'Ativo'
 
-    with open(f'Arquivos/{nome_da_conta}/{id_do_vendedor}-backup.txt', 'w') as documento_bkp:
-        documento_bkp.write(f'{lista_retorno}\n')
-        mensagem('Arquivo backup.txt gerado')
+            elif body['status'] == 'paused':
+                body['status'] = 'Pausado'
+
+            elif body['status'] == 'closed':
+                body['status'] = 'Fechado'
+
+            elif body['status'] == 'under_review':
+                body['status'] = 'Sob revisão'
+            else:
+                pass
+
+            criado = body['date_created']
+            atua = body['last_updated']
+            '''
+            criado_ano = criado[0:4]
+            criado_mes = criado[5:7]
+            criado_dia = criado[9:10]
+            '''
+
+            body['date_created'] = f'{criado[8:10]}/{criado[5:7]}/{criado[0:4]} {criado[11:19]}'
+            body['last_updated'] = f'{atua[8:10]}/{atua[5:7]}/{atua[0:4]} {atua[11:19]}'
+
+            porcentagem = body['health']
+            try:
+                float(porcentagem)
+                body['health'] = f'{(float(porcentagem)) * 100}%'
+            except:
+                pass
+
+            if body['catalog_listing'] == 'TRUE':
+                body['catalog_listing'] = 'Verdadeiro'
+            else:
+                body['catalog_listing'] = 'Falso'
+
+            if len(body['item_relations']) == 0:
+                body['item_relations'] = 'Sem relação'
+            else:
+                body['item_relations'] = body['item_relations'][0]['id']
+
+            if len(body['channels']) == 2:
+                body['channels'] = 'Vendido em ambos canais'
+            elif body['channels'][0] == 'marketplace':
+                body['channels'] = 'Vendido apenas no Mercado Livre'
+            elif body['channels'][0] == 'mshops':
+                body['channels'] = 'Vendido apenas no Mercado Shops'
+            else:
+                pass
+
+            lista_retorno.append(body)
 
     drops = [
         'site_id', 'official_store_id', 'user_product_id', 'seller_id', 'category_id', 'inventory_id',
@@ -104,7 +165,8 @@ def gerar_arquivos():
         'coverage_areas',
         'warnings', 'listing_source', 'variations', 'sub_status', 'warranty', 'parent_item_id',
         'differential_pricing',
-        'deal_ids', 'automatic_relist', 'start_time', 'stop_time', 'end_time', 'expiration_time']
+        'deal_ids', 'automatic_relist', 'start_time', 'stop_time', 'end_time', 'expiration_time', 'condition',
+        'seller_custom_field']
 
     exportar_para_planilha(lista_retorno, drops)
 
@@ -114,7 +176,7 @@ def gerar_arquivos():
 
 
 if gerar_os_arquivos:
-    gerar_arquivos()
+    gerar_planilha()
     path = f'Arquivos/{nome_da_conta}/{id_do_vendedor}-planilha-produtos.xlsx'
     path = os.path.realpath(path)
     os.startfile(path)

@@ -1,7 +1,9 @@
-import time
-import requests
 import json
 import os
+import time
+
+import requests
+
 from chaves import access_token
 
 # TODO Criar uma interface visual para gerenciamento dos anúncios
@@ -15,7 +17,6 @@ id_do_vendedor = access_token[-9:]
 gerar_arquivos = True
 apenas_itens_ativos = False
 base = 'https://api.mercadolibre.com'
-
 lista = []
 
 
@@ -58,7 +59,6 @@ def proxima_pagina(scroll):
 
 
 def pegar_todos_produtos():
-    mensagem(f'Conta conectada: {nome_da_conta}')
     inicio_timer = time.time()
     paginas = 0
 
@@ -127,44 +127,21 @@ def pegar_todos_produtos():
 
             resposta = fazer_reqs(url)
 
-            # Aqui vem um resultado de 50 produtos
-            # Então vamos adicionar item por item na lista
             for produto in resposta['results']:
                 lista.append(produto)
 
-            # Eu recomendo colocar um tempo entre uma execução e outra
-            # Fazer muitas requisições em um curto período não é legal
-
     if gerar_arquivos:
-        # Se a pasta arquivos não existir, ela será criada aqui
         if not os.path.exists(f'Arquivos/{nome_da_conta}'):
             os.makedirs(f'Arquivos/{nome_da_conta}')
             mensagem(f'Pasta {nome_da_conta} criada')
 
-        # Aqui ele deleta os arquivos existentes
-        # Caso o valor da variável seja True
-
         arquivo_json = f'Arquivos/{nome_da_conta}/{id_do_vendedor}-ids_mlb.json'
-        arquivo_txt = f'Arquivos/{nome_da_conta}/{id_do_vendedor}-ids_mlb.txt'
 
-        # Apagar arquivos
         if os.path.exists(arquivo_json):
             os.remove(arquivo_json)
 
-        if os.path.exists(arquivo_txt):
-            os.remove(arquivo_txt)
-
-        # mensagem('Arquivos antigos deletados')
-
-        # Gerar arquivos
         with open(arquivo_json, 'w') as outfile:
             json.dump(lista, outfile)
-            # mensagem(f'Arquivo JSON com todos os IDS da conta {id_do_vendedor} gerado')
-
-        with open(arquivo_txt, 'w') as documento:
-            for produto in lista:
-                documento.write(f'{produto}\n')
-            # mensagem(f'Arquivo TXT com todos os IDS da conta {id_do_vendedor} gerado')
 
     fim_timer = time.time()
     mensagem(f'{nome_da_conta}: Todos os IDS foram coletados ')
