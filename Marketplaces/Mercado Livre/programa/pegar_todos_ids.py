@@ -1,10 +1,8 @@
 import json
 import os
 import time
-
 import requests
-
-from chaves import access_token
+from access_token import access_token
 
 # TODO Criar uma interface visual para gerenciamento dos anúncios
 
@@ -58,7 +56,8 @@ def proxima_pagina(scroll):
     return resposta
 
 
-def pegar_todos_produtos():
+def pegar_todos_ids():
+    mensagem(f'Conta conectada: {nome_da_conta}')
     inicio_timer = time.time()
     paginas = 0
 

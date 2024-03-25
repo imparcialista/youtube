@@ -1,6 +1,7 @@
-__pycache__
-Marketplaces/Mercado Livre/Exportar produtos/Arquivos
-chaves.py
-.idea
-marketplaces/Mercado Livre/Exportar produtos/__pycache__
+/.idea
 /__pycache__
+marketplaces/__pycache__
+marketplaces/Mercado Livre/__pycache__
+marketplaces/Mercado Livre/programa/__pycache__
+Marketplaces/Mercado Livre/programa/Arquivos
+Marketplaces/Mercado Livre/programa/access_token.py

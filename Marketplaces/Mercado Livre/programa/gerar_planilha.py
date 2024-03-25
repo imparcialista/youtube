@@ -1,17 +1,18 @@
 import pandas as pd
+from pegar_todos_ids import *
 
-from listar_todos_anuncios import *
-
-# caso aconteça o erro ao tentar gerar o arquivo excel
+# Caso aconteça o erro ao tentar gerar o arquivo excel
 # pip install openpyxl
 
 # Gera uma planilha com todos os produtos da conta selecionada
-gerar_os_arquivos = False
+# Só pode ser verdadeiro quando for para testar
+gerar_planilha_teste = False
 lista_retorno = []
 
 ids_mlb = f'Arquivos/{nome_da_conta}/{id_do_vendedor}-ids_mlb.json'
+
 if not os.path.exists(ids_mlb):
-    pegar_todos_produtos()
+    pegar_todos_ids()
 
 
 def exportar_para_planilha(lista_json: list, colunas_drop: list):
@@ -172,10 +173,10 @@ def gerar_planilha():
 
     # Fim do programa
     fim_timer = time.time()
-    mensagem(f"Programa: Gerar arquivos finalizado | Tempo de execução: {fim_timer - inicio_timer} segundos")
+    mensagem(f"Programa: Atualizar planilha finalizado | Tempo de execução: {fim_timer - inicio_timer} segundos")
 
 
-if gerar_os_arquivos:
+if gerar_planilha_teste:
     gerar_planilha()
     path = f'Arquivos/{nome_da_conta}/{id_do_vendedor}-planilha-produtos.xlsx'
     path = os.path.realpath(path)
