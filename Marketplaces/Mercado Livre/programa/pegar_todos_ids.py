@@ -19,7 +19,7 @@ lista = []
 
 
 def mensagem(texto):
-    print(f'{'-' * (len(texto) + 4)}\n| {texto} |')
+    print(f'{"-" * (len(texto) + 4)}\n| {texto} |')
 
 
 def ler_json(arquivo):
