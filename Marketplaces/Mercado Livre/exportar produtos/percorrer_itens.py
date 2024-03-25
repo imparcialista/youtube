@@ -6,7 +6,7 @@ from listar_todos_anuncios import *
 # pip install openpyxl
 
 # Gera uma planilha com todos os produtos da conta selecionada
-gerar_os_arquivos = True
+gerar_os_arquivos = False
 lista_retorno = []
 
 ids_mlb = f'Arquivos/{nome_da_conta}/{id_do_vendedor}-ids_mlb.json'
