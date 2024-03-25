@@ -1,23 +1,21 @@
 from gerar_planilha import *
 
 planilha_arquivos = f'Arquivos/{nome_da_conta}/{id_do_vendedor}-planilha-produtos.xlsx'
-planilha_teste = 'C:/Users/Lucas/Downloads/planilha_teste.xlsx'
+planilha_base = f'Arquivos/planilha_base.xlsx'
 
 if not os.path.exists(planilha_arquivos):
     gerar_planilha()
     time.sleep(1)
 
-# df_produtos = pd.read_excel(planilha_teste)
-# df_produtos = pd.read_excel(planilha_arquivos)
-# print(df_produtos)
-'''
-for linha in df_produtos['Matriz']:
-    linha = str(linha)
-    linha = linha.replace(' MATRIZ', '')
 
-    print(linha)
-'''
+df_produtos = pd.read_excel(planilha_arquivos)
 # print(df_produtos)
+
+df_filtrado = df_produtos.loc[0:, ['attributes', 'available_quantity', 'id', ]]
+
+print(df_filtrado)
+
+# df_filtrado.to_excel('df_filtrado.xlsx', index=False)
 
 sair = False
 
