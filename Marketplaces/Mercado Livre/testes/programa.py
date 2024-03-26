@@ -1,32 +1,24 @@
 import json
 import os
 import time
-import requests
+
 import pandas as pd
+import requests
 
 
 def main():
-    # TODO Criar uma interface visual para gerenciamento dos anúncios
-
-    # Caso aconteça o erro ao tentar gerar o arquivo excel: pip install openpyxl
-
-    lista_retorno = []
+    os.system('CLS')
     apenas_itens_ativos = False
     base = 'https://api.mercadolibre.com'
-    lista = []
     sair = False
-
-    '''
-    FUNÇÕES
-    '''
 
 
     def mensagem(texto):
         print(f'{"-" * (len(texto) + 4)}\n| {texto} |')
 
 
-    def fazer_reqs(url, access):
-        headers = {'Authorization': f'Bearer {access}'}
+    def fazer_reqs(url, access_token_value):
+        headers = {'Authorization': f'Bearer {access_token_value}'}
         resposta = requests.get(f'{url}', headers=headers)
 
         tentativa = 1
@@ -35,6 +27,7 @@ def main():
                 if tentativa == 11:
                     mensagem('Número máximo de tentativas excedido')
                     quit()
+
                 else:
                     mensagem(f'Tentativa {tentativa} | Falha na requisição')
                     tentativa += 1
@@ -54,7 +47,9 @@ def main():
             resposta = requests.get(f'https://api.mercadolibre.com/users/me', headers=headers)
 
             if resposta.status_code == 200:
+                os.system('CLS')
                 return access_token_value
+
             else:
                 print('Access Token inválido ou expirado')
 
@@ -78,7 +73,8 @@ def main():
 
 
     def pegar_todos_ids(access_token_value):
-        mensagem(f'Conta conectada: {pegar_nome_da_conta(access_token_value)}')
+        mensagem(f'Conta conectada: {(pegar_nome_da_conta(access_token_value))}')
+        lista = []
         inicio_timer = time.time()
         paginas = 0
 
@@ -93,7 +89,7 @@ def main():
         quantidade_de_an = resposta['paging']['total']
 
         if quantidade_de_an == 0:
-            mensagem('Nenhum anúncio ativo\nPrograma finalizado')
+            mensagem('Nenhum anúncio ativo. Programa finalizado')
             return
 
         if quantidade_de_an > 1000:
@@ -108,7 +104,6 @@ def main():
 
             lista_scroll = []
             primeiro_scroll = pegar_scroll_id(access_token_value)
-            # mensagem(f'IDs coletados: {len(primeiro_scroll["results"])}')
             mensagem('Coletando IDs, por favor aguarde...')
 
             lista_scroll.append(primeiro_scroll['scroll_id'])
@@ -118,7 +113,6 @@ def main():
 
             def gerar_scroll(scroll_anterior):
                 scroll = proxima_pagina(scroll_anterior, access_token_value)
-                # mensagem(f'IDs coletados: {len(scroll["results"])}')
 
                 for id_mlb in scroll['results']:
                     lista.append(id_mlb)
@@ -141,7 +135,7 @@ def main():
             mensagem(f'Páginas para percorrer: {paginas}')
 
             for pagina in range(paginas):
-                url = f'{base}/users/{id_do_vendedor}/items/search?{filtro}&offset={pagina * 50}'
+                url = f'{base}/users/{(access_token_value[-9:])}/items/search?{filtro}&offset={pagina * 50}'
 
                 mensagem(f'Página: {pagina + 1} | Offset {pagina * 50}')
 
@@ -154,7 +148,7 @@ def main():
             os.makedirs(f'Arquivos/{pegar_nome_da_conta(access_token)}')
             mensagem(f'Pasta {pegar_nome_da_conta(access_token)} criada')
 
-        arquivo_json = f'Arquivos/{pegar_nome_da_conta(access_token)}/{id_do_vendedor}-ids_mlb.json'
+        arquivo_json = f'Arquivos/{pegar_nome_da_conta(access_token)}/{(access_token_value[-9:])}-ids_mlb.json'
 
         if os.path.exists(arquivo_json):
             os.remove(arquivo_json)
@@ -169,15 +163,9 @@ def main():
         return lista
 
 
-    '''
-    PROGRAMA GERAR PLANILHA
-    '''
-
-
     def exportar_para_planilha(lista_json: list, colunas_drop: list, access_token_value):
-        arquivo_json = f'Arquivos/{
-            (pegar_nome_da_conta(access_token_value))
-            }/{(access_token_value[-9:])}-retorno-produtos.json'
+        arquivo_json = (f'Arquivos/{(pegar_nome_da_conta(access_token_value))}/{(access_token_value[-9:])}'
+                        f'-retorno-produtos.json')
 
         if os.path.exists(arquivo_json):
             os.remove(arquivo_json)
@@ -187,7 +175,8 @@ def main():
 
         df = pd.read_json(arquivo_json)
         df = df.drop(colunas_drop, axis=1, errors='ignore')
-        planilha = f'Arquivos/{pegar_nome_da_conta(access_token_value)}/{id_do_vendedor}-planilha-produtos.xlsx'
+        planilha = (f'Arquivos/{pegar_nome_da_conta(access_token_value)}/'
+                    f'{(access_token_value[-9:])}-planilha-produtos.xlsx')
 
         if os.path.exists(planilha):
             os.remove(planilha)
@@ -201,13 +190,15 @@ def main():
 
     def gerar_planilha(access_token_value):
         ids_mlb = f'Arquivos/{pegar_nome_da_conta(access_token_value)}/{(access_token_value[-9:])}-ids_mlb.json'
+        lista_retorno = []
+        lista_geral = []
+        gap_vinte = 0
+        paginas = 0
+
         if not os.path.exists(ids_mlb):
             pegar_todos_ids(access_token_value)
 
         inicio_timer = time.time()
-        lista_geral = []
-        gap_vinte = 0
-        paginas = 0
 
         df = pd.read_json(ids_mlb)
         quantidade_de_an = len(df)
@@ -220,7 +211,6 @@ def main():
 
         mensagem(f'Páginas para percorrer: {paginas}')
 
-        # with open(f'teste.txt', 'w') as documento:
         for pagina in range(paginas):
             inicio = gap_vinte
             fim = gap_vinte + 20
@@ -240,10 +230,13 @@ def main():
                 envio = body['shipping']['logistic_type']
                 if envio == 'cross_docking':
                     body['shipping'] = 'Normal'
+
                 elif envio == 'fulfillment':
                     body['shipping'] = 'Full'
+
                 elif envio == 'not_specified':
                     body['shipping'] = 'Não especificado'
+
                 else:
                     pass
 
@@ -299,10 +292,13 @@ def main():
 
                 if len(body['channels']) == 2:
                     body['channels'] = 'Vendido em ambos canais'
+
                 elif body['channels'][0] == 'marketplace':
                     body['channels'] = 'Vendido apenas no Mercado Livre'
+
                 elif body['channels'][0] == 'mshops':
                     body['channels'] = 'Vendido apenas no Mercado Shops'
+
                 else:
                     pass
 
@@ -322,15 +318,12 @@ def main():
             'seller_custom_field']
 
         exportar_para_planilha(lista_retorno, drops, access_token_value)
-
-        # Fim do programa
         fim_timer = time.time()
         mensagem(f"Programa: Atualizar planilha finalizado | Tempo de execução: {fim_timer - inicio_timer} segundos")
 
 
     def atualizar(produto, valor_atualizar, access_token_value):
         url = f'{base}/items/{produto}'
-
         info_produto = fazer_reqs(url, access_token_value)
         est_produto = info_produto['available_quantity']
         prc_produto = info_produto['price']
@@ -346,7 +339,6 @@ def main():
             payload = json.dumps({"price": valor_atualizar})
 
         headers = {"Authorization": f"Bearer {access_token_value}"}
-
         resposta = requests.put(url=url, headers=headers, data=payload)
 
         if resposta.status_code != 200:
@@ -396,17 +388,11 @@ def main():
                     resposta = fazer_reqs(url, access_token_value)
 
                     for produto in resposta['results']:
-
                         escrever = atualizar(produto, valor_atualizar, access_token_value)
                         mensagem(escrever)
 
         else:
             print('Nenhum anúncio encontrado')
-
-
-    '''
-    PROGRAMA FINAL
-    '''
 
 
     def get_input():
@@ -423,9 +409,9 @@ def main():
         '\n[3] Trocar de conta | Altere a conta conectada alterando o Access Token'
         '\n[4] Abrir planilha | Abre a planilha de produtos da conta selecionada'
         '\n[5] Atualizar estoque | Programa para atualizar estoques por SKU'
-        '\n'
-        )
+        '\n')
 
+    mensagem('Programa feito por @imparcialista  v0.0.1')
     access_token = configurar_conta()
     mensagem(f'Conta conectada: {(pegar_nome_da_conta(access_token))}')
     mensagem('Digite SAIR para encerrar o programa')
@@ -463,8 +449,7 @@ def main():
             print(mensagem_base)
 
         elif escolha == '4' or escolha == 'abrir planilha':
-            id_do_vendedor = access_token[-9:]
-            path = f'Arquivos/{(pegar_nome_da_conta(access_token))}/{id_do_vendedor}-planilha-produtos.xlsx'
+            path = f'Arquivos/{(pegar_nome_da_conta(access_token))}/{(access_token[-9:])}-planilha-produtos.xlsx'
             path = os.path.realpath(path)
 
             if not os.path.exists(path):
@@ -480,14 +465,12 @@ def main():
 
         elif escolha == '5' or escolha == 'atualizar estoque':
             atualizar_info = True
-            # mensagem('Programa atualizar estoque iniciado')
             while atualizar_info:
                 mensagem('[Digite VOLTAR para retornar ao menu anterior]')
                 mensagem('O que você deseja atualizar?')
                 mensagem('[1] Estoque | [2] Preço')
                 tipo_desejado = get_input()
                 if tipo_desejado == 'voltar':
-                    atualizar_info = False
                     break
 
                 if tipo_desejado == '1' or tipo_desejado == '2':
