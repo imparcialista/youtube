@@ -8,14 +8,20 @@ from pegar_todos_ids import *
 # Só pode ser verdadeiro quando for para testar
 gerar_planilha_teste = False
 lista_retorno = []
+# id_do_vendedor = access_token[-9:]
 
-ids_mlb = f'Arquivos/{nome_da_conta}/{id_do_vendedor}-ids_mlb.json'
+# ids_mlb = f'Arquivos/{nome_da_conta}/{id_do_vendedor}-ids_mlb.json'
 
-if not os.path.exists(ids_mlb):
-    pegar_todos_ids()
+# if not os.path.exists(ids_mlb):
+#     pegar_todos_ids(access_token)
 
 
-def exportar_para_planilha(lista_json: list, colunas_drop: list):
+def exportar_para_planilha(lista_json: list, colunas_drop: list, access_token_value):
+
+    nome = fazer_reqs(f'{base}/users/me', access_token_value)
+    nome_da_conta = nome['nickname']
+    id_do_vendedor = access_token_value[-9:]
+
     arquivo_json = f'Arquivos/{nome_da_conta}/{id_do_vendedor}-retorno-produtos.json'
 
     if os.path.exists(arquivo_json):
@@ -46,9 +52,19 @@ def exportar_para_planilha(lista_json: list, colunas_drop: list):
     mensagem(f'Planilha gerada')
 
 
-def gerar_planilha():
+def gerar_planilha(access_token_value):
+
+    nome = fazer_reqs(f'{base}/users/me', access_token_value)
+    nome_da_conta = nome['nickname']
+    id_do_vendedor = access_token_value[-9:]
+
+    # mensagem(f'Conta conectada: {nome_da_conta}')
+
+    ids_mlb = f'Arquivos/{nome_da_conta}/{id_do_vendedor}-ids_mlb.json'
+    if not os.path.exists(ids_mlb):
+        pegar_todos_ids(access_token_value)
+
     inicio_timer = time.time()
-    mensagem(f'Conta conectada: {nome_da_conta}')
     lista_geral = []
     gap_vinte = 0
     paginas = 0
@@ -76,9 +92,10 @@ def gerar_planilha():
         gap_vinte += 20
 
     for i_pack, pack in enumerate(lista_geral):
-        mensagem(f'Indice: {i_pack} | Conteúdo: {pack}')
+        # print(f'Indice: {i_pack} | Conteúdo: {pack}')
+        mensagem(f'Indice: {i_pack}')
         url = f'https://api.mercadolibre.com/items?ids={pack}'
-        retorno = fazer_reqs(url)
+        retorno = fazer_reqs(url, access_token_value)
 
         for grupo_de_itens in retorno:
             body = grupo_de_itens['body']
@@ -132,6 +149,7 @@ def gerar_planilha():
             try:
                 float(porcentagem)
                 body['health'] = f'{(float(porcentagem)) * 100}%'
+
             except:
                 pass
 
@@ -169,15 +187,17 @@ def gerar_planilha():
         'deal_ids', 'automatic_relist', 'start_time', 'stop_time', 'end_time', 'expiration_time', 'condition',
         'seller_custom_field']
 
-    exportar_para_planilha(lista_retorno, drops)
+    exportar_para_planilha(lista_retorno, drops, access_token_value)
 
     # Fim do programa
     fim_timer = time.time()
     mensagem(f"Programa: Atualizar planilha finalizado | Tempo de execução: {fim_timer - inicio_timer} segundos")
 
 
+'''
 if gerar_planilha_teste:
     gerar_planilha()
     path = f'Arquivos/{nome_da_conta}/{id_do_vendedor}-planilha-produtos.xlsx'
     path = os.path.realpath(path)
     os.startfile(path)
+'''

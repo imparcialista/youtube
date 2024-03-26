@@ -2,14 +2,17 @@ import json
 import os
 import time
 import requests
-from access_token import access_token
+
+# from access_token import access_token
 
 # TODO Criar uma interface visual para gerenciamento dos anúncios
+
+# access_token = input(str('Access Token = '))
 
 # Dica!
 # Para pegar o id do vendedor de um access token
 # Utilize: id_do_vendedor = access_token[-9:]
-id_do_vendedor = access_token[-9:]
+# id_do_vendedor = access_token[-9:]
 
 # Recomendo que deixe esse como True
 gerar_arquivos = True
@@ -28,35 +31,46 @@ def ler_json(arquivo):
     return data
 
 
-def fazer_reqs(url):
-    headers = {'Authorization': f'Bearer {access_token}'}
+def fazer_reqs(url, access):
+    headers = {'Authorization': f'Bearer {access}'}
     resposta = requests.get(f'{url}', headers=headers)
 
-    if resposta.status_code != 200:
-        mensagem('Falha na requisição')
-        resposta.raise_for_status()
+    tentativa = 1
+    while tentativa < 12:
+        if resposta.status_code != 200:
+            if tentativa == 11:
+                mensagem('Número máximo de tentativas excedido')
+                quit()
+            else:
+                mensagem(f'Tentativa {tentativa} | Falha na requisição')
+                tentativa += 1
+                time.sleep(0.25)
 
-    resposta = resposta.json()
-    return resposta
+        else:
+            resposta = resposta.json()
+            return resposta
 
 
-nome = fazer_reqs(f'{base}/users/me')
-nome_da_conta = nome['nickname']
-
-
-def pegar_scroll_id():
+def pegar_scroll_id(access_token_value):
+    id_do_vendedor = access_token_value[-9:]
     url = f'{base}/users/{id_do_vendedor}/items/search?search_type=scan&limit=100'
-    resposta = fazer_reqs(url)
+    resposta = fazer_reqs(url, access_token_value)
     return resposta
 
 
-def proxima_pagina(scroll):
+def proxima_pagina(scroll, access_token_value):
+    id_do_vendedor = access_token_value[-9:]
     url = f'{base}/users/{id_do_vendedor}/items/search?search_type=scan&scroll_id={scroll}&limit=100'
-    resposta = fazer_reqs(url)
+    resposta = fazer_reqs(url, access_token_value)
     return resposta
 
 
-def pegar_todos_ids():
+def pegar_todos_ids(access_token_value):
+    id_do_vendedor = access_token_value[-9:]
+
+    nome = fazer_reqs(f'{base}/users/me', access_token_value)
+    nome_da_conta = nome['nickname']
+
     mensagem(f'Conta conectada: {nome_da_conta}')
     inicio_timer = time.time()
     paginas = 0
@@ -66,9 +80,8 @@ def pegar_todos_ids():
     else:
         filtro = ''
 
-    # Primeira requisição
     url = f'{base}/users/{id_do_vendedor}/items/search?{filtro}&offset={0}'
-    resposta = fazer_reqs(url)
+    resposta = fazer_reqs(url, access_token_value)
 
     quantidade_de_an = resposta['paging']['total']
 
@@ -87,7 +100,7 @@ def pegar_todos_ids():
         paginas = paginas - 1
 
         lista_scroll = []
-        primeiro_scroll = pegar_scroll_id()
+        primeiro_scroll = pegar_scroll_id(access_token_value)
         mensagem(f'IDs coletados: {len(primeiro_scroll["results"])}')
 
         lista_scroll.append(primeiro_scroll['scroll_id'])
@@ -96,7 +109,7 @@ def pegar_todos_ids():
 
 
         def gerar_scroll(scroll_anterior):
-            scroll = proxima_pagina(scroll_anterior)
+            scroll = proxima_pagina(scroll_anterior, access_token_value)
             mensagem(f'IDs coletados: {len(scroll["results"])}')
 
             for id_mlb in scroll['results']:
@@ -124,7 +137,7 @@ def pegar_todos_ids():
 
             mensagem(f'Página: {pagina + 1} | Offset {pagina * 50}')
 
-            resposta = fazer_reqs(url)
+            resposta = fazer_reqs(url, access_token_value)
 
             for produto in resposta['results']:
                 lista.append(produto)
