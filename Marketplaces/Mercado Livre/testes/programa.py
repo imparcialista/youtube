@@ -331,6 +331,10 @@ def main():
     def atualizar(produto, valor_atualizar, access_token_value):
         url = f'{base}/items/{produto}'
 
+        info_produto = fazer_reqs(url, access_token_value)
+        est_produto = info_produto['available_quantity']
+        prc_produto = info_produto['price']
+
         if type(valor_atualizar) is int:
             if valor_atualizar > 0:
                 payload = json.dumps({"available_quantity": valor_atualizar, "status": "active"})
@@ -351,11 +355,13 @@ def main():
 
         else:
             if type(valor_atualizar) is int:
-                retorno = f'{produto} | Estoque alterado para {valor_atualizar}'
+                retorno = f'{produto} | Estoque alterado para {valor_atualizar} | Estoque anterior: {est_produto}'
 
             else:
                 valor_imprimir = valor_atualizar.replace('.', ',')
-                retorno = f'{produto} | Preço alterado para R$ {valor_imprimir}'
+                prc_produto = str(prc_produto)
+                prc_produto = prc_produto.replace('.', ',')
+                retorno = f'{produto} | Preço alterado para R$ {valor_imprimir} | Preço anterior: R$ {prc_produto}'
 
             txt_resposta = f'{retorno}'
 
@@ -374,6 +380,7 @@ def main():
             if quantidade_de_an <= 50:
                 for produto in resposta['results']:
                     escrever = atualizar(produto, valor_atualizar, access_token_value)
+
                     mensagem(escrever)
 
             else:
@@ -389,6 +396,7 @@ def main():
                     resposta = fazer_reqs(url, access_token_value)
 
                     for produto in resposta['results']:
+
                         escrever = atualizar(produto, valor_atualizar, access_token_value)
                         mensagem(escrever)
 
@@ -415,9 +423,8 @@ def main():
         '\n[3] Trocar de conta | Altere a conta conectada alterando o Access Token'
         '\n[4] Abrir planilha | Abre a planilha de produtos da conta selecionada'
         '\n[5] Atualizar estoque | Programa para atualizar estoques por SKU'
-    )
-
-    print(mensagem_base)
+        '\n'
+        )
 
     access_token = configurar_conta()
     mensagem(f'Conta conectada: {(pegar_nome_da_conta(access_token))}')
@@ -472,24 +479,61 @@ def main():
             print(mensagem_base)
 
         elif escolha == '5' or escolha == 'atualizar estoque':
-            atualizar_estoque = True
-            mensagem('Programa atualizar estoque iniciado, para sair digite voltar')
-            while atualizar_estoque:
-                print('Qual SKU você deseja alterar?')
-                sku_escolhido = get_input()
-                if sku_escolhido == 'sair':
-                    main()
-                else:
-                    print('O que você deseja atualizar?\n[1] Estoque\n[2] Preço\n> ')
-                    tipo_desejado = get_input()
-                    if tipo_desejado == '1' or tipo_desejado == '2':
-                        if tipo_desejado == '1':
-                            valor_atualizar = input(int('Para qual quantidade você deseja atualizar?\n>'))
-                        else:
-                            valor_atualizar = input(str('Para qual preço você deseja atualizar?\n>'))
-                        pegar_produtos(sku_escolhido, valor_atualizar, access_token)
+            atualizar_info = True
+            # mensagem('Programa atualizar estoque iniciado')
+            while atualizar_info:
+                mensagem('[Digite VOLTAR para retornar ao menu anterior]')
+                mensagem('O que você deseja atualizar?')
+                mensagem('[1] Estoque | [2] Preço')
+                tipo_desejado = get_input()
+                if tipo_desejado == 'voltar':
+                    atualizar_info = False
+                    break
+
+                if tipo_desejado == '1' or tipo_desejado == '2':
+
+                    if tipo_desejado == '1':
+                        atualizar_est = True
+
+                        while atualizar_est:
+                            mensagem('[Digite VOLTAR para retornar ao menu anterior]')
+                            mensagem('Qual SKU você deseja atualizar o estoque?')
+                            sku_escolhido = get_input()
+                            if sku_escolhido == 'voltar':
+                                atualizar_est = False
+
+                            else:
+                                valor_para_atualizar = input('Para qual quantidade você deseja atualizar?\n> ')
+                                valor_para_atualizar = int(valor_para_atualizar)
+
+                                mensagem(f'(SOLICITAÇÃO DE ALTERAÇÃO)')
+                                mensagem(f'SKU: {sku_escolhido} | Estoque: {valor_para_atualizar}')
+
+                                pegar_produtos(sku_escolhido, valor_para_atualizar, access_token)
+
                     else:
-                        print('Opção inválida, digite apenas 1 ou 2')
+                        atualizar_prc = True
+
+                        while atualizar_prc:
+                            mensagem('[Digite VOLTAR para retornar ao menu anterior]')
+                            mensagem('Qual SKU você deseja atualizar o preço?')
+                            sku_escolhido = get_input()
+                            if sku_escolhido == 'voltar':
+                                print('Você escolheu voltar')
+                                atualizar_prc = False
+
+                            else:
+                                valor_para_atualizar = input(str('Para qual preço você deseja atualizar?\n> '))
+                                valor_para_atualizar = valor_para_atualizar.replace('.', '')
+
+                                mensagem(f'(SOLICITAÇÃO DE ALTERAÇÃO)')
+                                mensagem(f'SKU: {sku_escolhido} | Preço: R$ {valor_para_atualizar}')
+                                valor_para_atualizar = valor_para_atualizar.replace(',', '.')
+
+                                pegar_produtos(sku_escolhido, valor_para_atualizar, access_token)
+
+                else:
+                    print('Opção inválida, digite apenas 1 ou 2')
 
             mensagem(f'Conta conectada: {(pegar_nome_da_conta(access_token))}')
             print(mensagem_base)
