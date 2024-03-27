@@ -4,6 +4,9 @@ import time
 import pandas as pd
 from tkinter import filedialog as dlg
 import requests
+from termcolor import colored
+
+os.system('color')
 
 
 def main():
@@ -14,7 +17,12 @@ def main():
 
 
     def mensagem(texto):
-        print(f'{"-" * (len(texto) + 4)}\n| {texto} |')
+        texto = f'{"-" * (len(texto) + 4)}\n| {texto} |'
+        print(colored(f'{texto}', 'light_blue'))
+
+
+    def print_colorido(texto):
+        print(colored(f'{texto}', 'light_green'))
 
 
     def fazer_reqs(url, access_token_value):
@@ -51,7 +59,7 @@ def main():
                 return access_token_value
 
             else:
-                print('Access Token inválido ou expirado')
+                print_colorido('Access Token inválido ou expirado')
 
 
     def pegar_nome_da_conta(access_token_value):
@@ -424,11 +432,11 @@ def main():
         '\n[6] Atualizar por planilha | Escolha uma planilha para atualizar o estoque'
         '\n')
 
-    mensagem('Programa feito por @imparcialista  v0.0.2')
+    mensagem('Programa feito por @imparcialista  v0.0.3')
     access_token = configurar_conta()
     mensagem(f'Conta conectada: {(pegar_nome_da_conta(access_token))}')
     mensagem('Digite SAIR para encerrar o programa')
-    print(mensagem_base)
+    print_colorido(mensagem_base)
 
     while not sair:
         escolha = get_input()
@@ -438,28 +446,28 @@ def main():
             quit()
 
         elif escolha == '?' or escolha == 'ajuda':
-            print('\nDigite SAIR para encerrar o programa')
+            print_colorido('\nDigite SAIR para encerrar o programa')
 
             mensagem(f'Conta conectada: {(pegar_nome_da_conta(access_token))}')
-            print(mensagem_base)
+            print_colorido(mensagem_base)
 
         elif escolha == '1' or escolha == 'atualizar planilha':
             gerar_planilha(access_token)
 
             mensagem(f'Conta conectada: {(pegar_nome_da_conta(access_token))}')
-            print(mensagem_base)
+            print_colorido(mensagem_base)
 
         elif escolha == '2' or escolha == 'atualizar ids':
             pegar_todos_ids(access_token)
 
             mensagem(f'Conta conectada: {(pegar_nome_da_conta(access_token))}')
-            print(mensagem_base)
+            print_colorido(mensagem_base)
 
         elif escolha == '3' or escolha == 'trocar de conta':
             access_token = configurar_conta()
 
             mensagem(f'Conta conectada: {(pegar_nome_da_conta(access_token))}')
-            print(mensagem_base)
+            print_colorido(mensagem_base)
 
         elif escolha == '4' or escolha == 'abrir planilha':
             path = f'Arquivos/{(pegar_nome_da_conta(access_token))}/{(access_token[-9:])}-planilha-produtos.xlsx'
@@ -474,12 +482,12 @@ def main():
             mensagem('Arquivo aberto')
 
             mensagem(f'Conta conectada: {(pegar_nome_da_conta(access_token))}')
-            print(mensagem_base)
+            print_colorido(mensagem_base)
 
         elif escolha == '5' or escolha == 'atualizador':
             atualizar_info = True
             while atualizar_info:
-                print('\n[Digite VOLTAR para retornar ao menu anterior]')
+                print_colorido('\n[Digite VOLTAR para retornar ao menu anterior]')
                 mensagem('O que você deseja atualizar?')
                 mensagem('[1] Estoque | [2] Preço')
                 tipo_desejado = get_input()
@@ -492,7 +500,7 @@ def main():
                         atualizar_est = True
 
                         while atualizar_est:
-                            print('\n[Digite VOLTAR para retornar ao menu anterior]')
+                            print_colorido('\n[Digite VOLTAR para retornar ao menu anterior]')
                             mensagem('Qual SKU você deseja atualizar o estoque?')
                             sku_escolhido = get_input_mlb()
                             voltar = sku_escolhido.lower()
@@ -516,11 +524,11 @@ def main():
                         atualizar_prc = True
 
                         while atualizar_prc:
-                            print('\n[Digite VOLTAR para retornar ao menu anterior]')
+                            print_colorido('\n[Digite VOLTAR para retornar ao menu anterior]')
                             mensagem('Qual SKU você deseja atualizar o preço?')
                             sku_escolhido = get_input()
                             if sku_escolhido == 'voltar':
-                                print('Você escolheu voltar')
+                                print_colorido('Você escolheu voltar')
                                 atualizar_prc = False
 
                             else:
@@ -534,19 +542,21 @@ def main():
                                 pegar_produtos(sku_escolhido, valor_para_atualizar, access_token)
 
                 else:
-                    print('Opção inválida, digite apenas 1 ou 2')
+                    print_colorido('Opção inválida, digite apenas 1 ou 2')
 
             mensagem(f'Conta conectada: {(pegar_nome_da_conta(access_token))}')
-            print(mensagem_base)
+            print_colorido(mensagem_base)
 
         elif escolha == '6' or escolha == 'atualizar por planilha':
 
             planilha_atualizar = dlg.askopenfilename()
             if planilha_atualizar == '':
-                print('Você não selecionou nenhum arquivo')
-                break
+                mensagem('Você não selecionou nenhum arquivo')
+                mensagem(f'Conta conectada: {(pegar_nome_da_conta(access_token))}')
+                print_colorido(mensagem_base)
+
             else:
-                print(f'\nCaminho do arquivo: {planilha_atualizar}')
+                print_colorido(f'\nCaminho do arquivo: {planilha_atualizar}')
                 df_planilha_atualizar = pd.read_excel(planilha_atualizar)
 
                 lista_sku = []
@@ -562,11 +572,11 @@ def main():
                 sku_nao_disp = []
 
                 for inx_sku, lista_sku_value in enumerate(lista_sku):
-                    
+
                     sku_mlb = str(lista_sku[inx_sku])
                     qtd_mlb = lista_est[inx_sku]
                     qtd_mlb = int(qtd_mlb)
-                    
+
                     url_df = (f"{base}/users/{(access_token[-9:])}/items/search?seller_sku="
                               f"{sku_mlb}&offset={0}")
 
@@ -574,7 +584,7 @@ def main():
                     qtd_de_an = resposta_df['paging']['total']
                     print()
                     if qtd_de_an > 0:
-                        time.sleep(1)
+                        time.sleep(0.25)
 
                         if qtd_de_an == 1:
                             mensagem(f'SKU: {sku_mlb} | {qtd_de_an} Anúncio')
@@ -590,16 +600,16 @@ def main():
                         mensagem(f'SKU: {sku_mlb} | Nenhum anúncio encontrado')
                         sku_nao_disp.append(sku_mlb)
 
-                print(f'\nDisponíveis: {sku_disp}')
-                print(f'\nNão disponíveis: {sku_nao_disp}\n')
+                print_colorido(f'\nDisponíveis: {sku_disp}')
+                print_colorido(f'\nNão disponíveis: {sku_nao_disp}\n')
 
                 mensagem(f'Conta conectada: {(pegar_nome_da_conta(access_token))}')
-                print(mensagem_base)
+                print_colorido(mensagem_base)
 
         else:
-            print('\n[X] Opção inválida | Escolha uma das opções')
+            print_colorido('\n[X] Opção inválida | Escolha uma das opções')
             mensagem(f'Conta conectada: {pegar_nome_da_conta(access_token)}')
-            print(mensagem_base)
+            print_colorido(mensagem_base)
 
 
 if __name__ == "__main__":
