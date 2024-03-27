@@ -1,10 +1,9 @@
 import json
 import os
 import time
-
 import pandas as pd
-
-path = dlg.askopenfilename()
+from tkinter import filedialog as dlg
+import requests
 
 
 def main():
@@ -328,6 +327,7 @@ def main():
         info_produto = fazer_reqs(url, access_token_value)
         est_produto = info_produto['available_quantity']
         prc_produto = info_produto['price']
+        tit_produto = info_produto['title']
 
         if type(valor_atualizar) is int:
             if valor_atualizar > 0:
@@ -348,7 +348,7 @@ def main():
 
         else:
             if type(valor_atualizar) is int:
-                retorno = f'{produto} | Estoque alterado para {valor_atualizar} | Estoque anterior: {est_produto}'
+                retorno = f'{produto} | Estoque alterado de {est_produto} para {valor_atualizar} | {tit_produto}'
 
             else:
                 valor_imprimir = valor_atualizar.replace('.', ',')
@@ -403,16 +403,23 @@ def main():
         return input_user
 
 
+    def get_input_mlb():
+        input_user = input(str('> '))
+        input_user = input_user.strip()
+        return input_user
+
+
     mensagem_base = (
         '\n[*] Escolha uma das opções, número ou comando'
         '\n[1] Atualizar planilha | Gera uma nova planilha com todos os produtos'
         '\n[2] Atualizar ids | Busca e atualiza a lista de IDS do Mercado Livre'
         '\n[3] Trocar de conta | Altere a conta conectada alterando o Access Token'
         '\n[4] Abrir planilha | Abre a planilha de produtos da conta selecionada'
-        '\n[5] Atualizar estoque | Programa para atualizar estoques por SKU'
+        '\n[5] Atualizador | Programa para atualizar estoque ou preço por SKU'
+        '\n[6] Atualizar por planilha | Escolha uma planilha para atualizar o estoque'
         '\n')
 
-    mensagem('Programa feito por @imparcialista  v0.0.1')
+    mensagem('Programa feito por @imparcialista  v0.0.2')
     access_token = configurar_conta()
     mensagem(f'Conta conectada: {(pegar_nome_da_conta(access_token))}')
     mensagem('Digite SAIR para encerrar o programa')
@@ -426,7 +433,7 @@ def main():
             quit()
 
         elif escolha == '?' or escolha == 'ajuda':
-            mensagem('Digite SAIR para encerrar o programa')
+            print('\nDigite SAIR para encerrar o programa')
 
             mensagem(f'Conta conectada: {(pegar_nome_da_conta(access_token))}')
             print(mensagem_base)
@@ -464,10 +471,10 @@ def main():
             mensagem(f'Conta conectada: {(pegar_nome_da_conta(access_token))}')
             print(mensagem_base)
 
-        elif escolha == '5' or escolha == 'atualizar estoque':
+        elif escolha == '5' or escolha == 'atualizador':
             atualizar_info = True
             while atualizar_info:
-                mensagem('[Digite VOLTAR para retornar ao menu anterior]')
+                print('\n[Digite VOLTAR para retornar ao menu anterior]')
                 mensagem('O que você deseja atualizar?')
                 mensagem('[1] Estoque | [2] Preço')
                 tipo_desejado = get_input()
@@ -480,15 +487,20 @@ def main():
                         atualizar_est = True
 
                         while atualizar_est:
-                            mensagem('[Digite VOLTAR para retornar ao menu anterior]')
+                            print('\n[Digite VOLTAR para retornar ao menu anterior]')
                             mensagem('Qual SKU você deseja atualizar o estoque?')
-                            sku_escolhido = get_input()
-                            if sku_escolhido == 'voltar':
+                            sku_escolhido = get_input_mlb()
+                            voltar = sku_escolhido.lower()
+                            if voltar == 'voltar':
                                 atualizar_est = False
 
                             else:
                                 valor_para_atualizar = input('Para qual quantidade você deseja atualizar?\n> ')
-                                valor_para_atualizar = int(valor_para_atualizar)
+                                try:
+                                    valor_para_atualizar = int(valor_para_atualizar)
+                                except:
+                                    mensagem('[ERRO: Insira apenas números inteiros]')
+                                    break
 
                                 mensagem(f'(SOLICITAÇÃO DE ALTERAÇÃO)')
                                 mensagem(f'SKU: {sku_escolhido} | Estoque: {valor_para_atualizar}')
@@ -499,7 +511,7 @@ def main():
                         atualizar_prc = True
 
                         while atualizar_prc:
-                            mensagem('[Digite VOLTAR para retornar ao menu anterior]')
+                            print('\n[Digite VOLTAR para retornar ao menu anterior]')
                             mensagem('Qual SKU você deseja atualizar o preço?')
                             sku_escolhido = get_input()
                             if sku_escolhido == 'voltar':
@@ -518,6 +530,57 @@ def main():
 
                 else:
                     print('Opção inválida, digite apenas 1 ou 2')
+
+            mensagem(f'Conta conectada: {(pegar_nome_da_conta(access_token))}')
+            print(mensagem_base)
+
+        elif escolha == '6' or escolha == 'atualizar por planilha':
+
+            planilha_atualizar = dlg.askopenfilename()
+            if planilha_atualizar == '':
+                print('Você não selecionou nenhum arquivo')
+                break
+            else:
+                print(f'\nCaminho do arquivo: {planilha_atualizar}')
+                df_planilha_atualizar = pd.read_excel(planilha_atualizar)
+
+                lista_sku = []
+                lista_est = []
+
+                for sku_df in df_planilha_atualizar['SKU']:
+                    lista_sku.append(sku_df)
+
+                for est_df in df_planilha_atualizar['EST']:
+                    lista_est.append(est_df)
+
+                sku_disp = []
+                sku_nao_disp = []
+
+                for inx_sku, lista_sku_value in enumerate(lista_sku):
+                    
+                    sku_mlb = str(lista_sku[inx_sku])
+                    qtd_mlb = lista_est[inx_sku]
+                    qtd_mlb = int(qtd_mlb)
+                    
+                    url_df = (f"{base}/users/{(access_token[-9:])}/items/search?seller_sku="
+                              f"{sku_mlb}&offset={0}")
+
+                    resposta_df = fazer_reqs(url_df, access_token)
+                    qtd_de_an = resposta_df['paging']['total']
+
+                    if qtd_de_an > 0:
+                        print()
+                        mensagem(f'SKU: {sku_mlb} | Anúncios: {qtd_de_an}')
+                        sku_disp.append(sku_mlb)
+
+                        pegar_produtos(sku_mlb, qtd_mlb, access_token)
+
+                    else:
+                        print(f'SKU: {sku_mlb} | Nenhum anúncio encontrado')
+                        sku_nao_disp.append(sku_mlb)
+
+                print(f'Disponíveis: {sku_disp}')
+                print(f'Não disponíveis: {sku_nao_disp}')
 
             mensagem(f'Conta conectada: {(pegar_nome_da_conta(access_token))}')
             print(mensagem_base)
