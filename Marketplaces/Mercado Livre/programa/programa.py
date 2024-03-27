@@ -330,6 +330,11 @@ def main():
         tit_produto = info_produto['title']
 
         if type(valor_atualizar) is int:
+            if valor_atualizar == est_produto:
+                retorno = f'{produto} | Estoque já está correto | {tit_produto}'
+                txt_resposta = f'{retorno}'
+                return txt_resposta
+
             if valor_atualizar > 0:
                 payload = json.dumps({"available_quantity": valor_atualizar, "status": "active"})
 
@@ -393,7 +398,7 @@ def main():
                         mensagem(escrever)
 
         else:
-            print('Nenhum anúncio encontrado')
+            mensagem('Nenhum anúncio encontrado')
 
 
     def get_input():
@@ -567,23 +572,29 @@ def main():
 
                     resposta_df = fazer_reqs(url_df, access_token)
                     qtd_de_an = resposta_df['paging']['total']
-
+                    print()
                     if qtd_de_an > 0:
-                        print()
-                        mensagem(f'SKU: {sku_mlb} | Anúncios: {qtd_de_an}')
+                        time.sleep(1)
+
+                        if qtd_de_an == 1:
+                            mensagem(f'SKU: {sku_mlb} | {qtd_de_an} Anúncio')
+
+                        else:
+                            mensagem(f'SKU: {sku_mlb} | {qtd_de_an} Anúncios')
+
                         sku_disp.append(sku_mlb)
 
                         pegar_produtos(sku_mlb, qtd_mlb, access_token)
 
                     else:
-                        print(f'SKU: {sku_mlb} | Nenhum anúncio encontrado')
+                        mensagem(f'SKU: {sku_mlb} | Nenhum anúncio encontrado')
                         sku_nao_disp.append(sku_mlb)
 
-                print(f'Disponíveis: {sku_disp}')
-                print(f'Não disponíveis: {sku_nao_disp}')
+                print(f'\nDisponíveis: {sku_disp}')
+                print(f'\nNão disponíveis: {sku_nao_disp}\n')
 
-            mensagem(f'Conta conectada: {(pegar_nome_da_conta(access_token))}')
-            print(mensagem_base)
+                mensagem(f'Conta conectada: {(pegar_nome_da_conta(access_token))}')
+                print(mensagem_base)
 
         else:
             print('\n[X] Opção inválida | Escolha uma das opções')
