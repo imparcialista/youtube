@@ -361,7 +361,7 @@ def main():
 
         if type(valor_atualizar) is int:
             if info_produto['shipping'] == 'Full':
-                retorno = f'{produto} | Produtos com envios Full não podem ser alterados | {tit_produto}'
+                retorno = f'{produto} | Produto Full: Não alterar | {tit_produto}'
                 txt_resposta = f'{retorno}'
                 return txt_resposta
 
@@ -396,7 +396,7 @@ def main():
                 org_prc_produto = str(org_prc_produto)
                 org_prc_produto = org_prc_produto.replace('.', ',')
 
-                retorno = (f'{produto} | Produto com desconto ativo de R$ {org_prc_produto} por R$ {prc_produto} |'
+                retorno = (f'{produto} | Desconto ativo de R$ {org_prc_produto} por R$ {prc_produto} |'
                            f' {tit_produto}')
 
                 txt_resposta = f'{retorno}'
@@ -625,14 +625,16 @@ def main():
                         
                     if df_atualizar.columns[1] == 'EST':
                         mensagem('Modo atualizar estoque por planilha selecionado')
-                        print('ATENÇÃO: Produtos que estão oferecendo Full \nnão serão alterados')
+                        mensagem_colorida('ATENÇÃO: Produtos que estão oferecendo '
+                                          'Full não serão alterados', 'red')
 
                         for est_df in df_atualizar['EST']:
                             valor_trocar.append(est_df)
                         
                     elif df_atualizar.columns[1] == 'PRC':
                         mensagem('Modo atualizar preço por planilha selecionado')
-                        print('ATENÇÃO: Produtos com promoção ativa não serão\nalterados para não sair da promoção')
+                        mensagem_colorida('ATENÇÃO: Produtos com promoção ativa não serão alterados para '
+                                          'não sair da promoção', 'red')
                         planilha_prc = True
 
                         for prc_df in df_atualizar['PRC']:
@@ -680,12 +682,16 @@ def main():
                             base_print = f'SKU: {sku_mlb} | {qtd_de_an} Anúncio'
 
                             if planilha_prc:
-                                complemento = f'Preço: R$ {valor_mlb}'
+                                valor_imprimir_novo = str(valor_mlb)
+                                valor_imprimir_novo.replace('.',  ',')
+                                complemento = f'Preço: R$ {valor_imprimir_novo}'
+
                             else:
                                 complemento = f'Estoque: {valor_mlb}'
 
                             if qtd_de_an == 1:
                                 mensagem(f'{base_print} | {complemento}')
+
                             else:
                                 mensagem(f'{base_print}s | {complemento}')
 
