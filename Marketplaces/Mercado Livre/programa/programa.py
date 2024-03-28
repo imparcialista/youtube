@@ -18,11 +18,16 @@ def main():
 
     def mensagem(texto):
         texto = f'{"-" * (len(texto) + 4)}\n| {texto} |'
-        print(colored(f'{texto}', 'light_blue'))
+        print(colored(f'{texto}', 'light_cyan'))
+
+
+    def mensagem_colorida(texto, cor):
+        texto = f'{"-" * (len(texto) + 4)}\n| {texto} |'
+        print(colored(f'{texto}', cor))
 
 
     def print_colorido(texto):
-        print(colored(f'{texto}', 'light_green'))
+        print(colored(f'{texto}', 'light_cyan'))
 
 
     def fazer_reqs(url, access_token_value):
@@ -334,10 +339,32 @@ def main():
         url = f'{base}/items/{produto}'
         info_produto = fazer_reqs(url, access_token_value)
         est_produto = info_produto['available_quantity']
+
         prc_produto = info_produto['price']
+        org_prc_produto = info_produto['original_price']
+
         tit_produto = info_produto['title']
 
+        envio = info_produto['shipping']['logistic_type']
+
+        if envio == 'cross_docking':
+            info_produto['shipping'] = 'Normal'
+
+        elif envio == 'fulfillment':
+            info_produto['shipping'] = 'Full'
+
+        elif envio == 'not_specified':
+            info_produto['shipping'] = 'Não especificado'
+
+        else:
+            pass
+
         if type(valor_atualizar) is int:
+            if info_produto['shipping'] == 'Full':
+                retorno = f'{produto} | Produtos com envios Full não podem ser alterados | {tit_produto}'
+                txt_resposta = f'{retorno}'
+                return txt_resposta
+
             if valor_atualizar == est_produto:
                 retorno = f'{produto} | Estoque já está correto | {tit_produto}'
                 txt_resposta = f'{retorno}'
@@ -350,7 +377,30 @@ def main():
                 payload = json.dumps({"available_quantity": valor_atualizar})
 
         else:
-            payload = json.dumps({"price": valor_atualizar})
+
+            if valor_atualizar == prc_produto:
+                retorno = f'{produto} | Preço já está correto | {tit_produto}'
+                txt_resposta = f'{retorno}'
+                return txt_resposta
+
+            org_prc_produto = str(org_prc_produto)
+
+            if org_prc_produto == 'None' or org_prc_produto == 'Null':
+                payload = json.dumps({"price": valor_atualizar})
+
+            else:
+
+                prc_produto = str(prc_produto)
+                prc_produto = prc_produto.replace('.', ',')
+
+                org_prc_produto = str(org_prc_produto)
+                org_prc_produto = org_prc_produto.replace('.', ',')
+
+                retorno = (f'{produto} | Produto com desconto ativo de R$ {org_prc_produto} por R$ {prc_produto} |'
+                           f' {tit_produto}')
+
+                txt_resposta = f'{retorno}'
+                return txt_resposta
 
         headers = {"Authorization": f"Bearer {access_token_value}"}
         resposta = requests.put(url=url, headers=headers, data=payload)
@@ -364,10 +414,11 @@ def main():
                 retorno = f'{produto} | Estoque alterado de {est_produto} para {valor_atualizar} | {tit_produto}'
 
             else:
+                valor_atualizar = str(valor_atualizar)
                 valor_imprimir = valor_atualizar.replace('.', ',')
                 prc_produto = str(prc_produto)
                 prc_produto = prc_produto.replace('.', ',')
-                retorno = f'{produto} | Preço alterado para R$ {valor_imprimir} | Preço anterior: R$ {prc_produto}'
+                retorno = f'{produto} | Preço alterado de R$ {prc_produto} para R$ {valor_imprimir} | {tit_produto}'
 
             txt_resposta = f'{retorno}'
 
@@ -432,7 +483,7 @@ def main():
         '\n[6] Atualizar por planilha | Escolha uma planilha para atualizar o estoque'
         '\n')
 
-    mensagem('Programa feito por @imparcialista  v0.0.3')
+    mensagem('Programa feito por @imparcialista  v0.5')
     access_token = configurar_conta()
     mensagem(f'Conta conectada: {(pegar_nome_da_conta(access_token))}')
     mensagem('Digite SAIR para encerrar o programa')
@@ -443,7 +494,7 @@ def main():
 
         if escolha == 'sair':
             mensagem('Encerrando o programa...')
-            quit()
+            break
 
         elif escolha == '?' or escolha == 'ajuda':
             print_colorido('\nDigite SAIR para encerrar o programa')
@@ -509,10 +560,12 @@ def main():
 
                             else:
                                 valor_para_atualizar = input('Para qual quantidade você deseja atualizar?\n> ')
+
                                 try:
                                     valor_para_atualizar = int(valor_para_atualizar)
+
                                 except:
-                                    mensagem('[ERRO: Insira apenas números inteiros]')
+                                    mensagem_colorida('[ERRO: Insira apenas números inteiros]', 'red')
                                     break
 
                                 mensagem(f'(SOLICITAÇÃO DE ALTERAÇÃO)')
@@ -527,6 +580,7 @@ def main():
                             print_colorido('\n[Digite VOLTAR para retornar ao menu anterior]')
                             mensagem('Qual SKU você deseja atualizar o preço?')
                             sku_escolhido = get_input()
+
                             if sku_escolhido == 'voltar':
                                 print_colorido('Você escolheu voltar')
                                 atualizar_prc = False
@@ -542,72 +596,123 @@ def main():
                                 pegar_produtos(sku_escolhido, valor_para_atualizar, access_token)
 
                 else:
-                    print_colorido('Opção inválida, digite apenas 1 ou 2')
+                    mensagem_colorida('Opção inválida, digite apenas 1 ou 2', 'red')
 
             mensagem(f'Conta conectada: {(pegar_nome_da_conta(access_token))}')
             print_colorido(mensagem_base)
 
         elif escolha == '6' or escolha == 'atualizar por planilha':
+            planilha_atualizar = dlg.askopenfilename(filetypes=[("Arquivos excel", ".xlsx")])
 
-            planilha_atualizar = dlg.askopenfilename()
             if planilha_atualizar == '':
-                mensagem('Você não selecionou nenhum arquivo')
+                mensagem_colorida('Você não selecionou nenhum arquivo', 'red')
                 mensagem(f'Conta conectada: {(pegar_nome_da_conta(access_token))}')
                 print_colorido(mensagem_base)
 
             else:
-                print_colorido(f'\nCaminho do arquivo: {planilha_atualizar}')
-                df_planilha_atualizar = pd.read_excel(planilha_atualizar)
+                print()
+                mensagem(f'Caminho do arquivo: {planilha_atualizar}')
+                df_atualizar = pd.read_excel(planilha_atualizar)
 
                 lista_sku = []
-                lista_est = []
+                valor_trocar = []
 
-                for sku_df in df_planilha_atualizar['SKU']:
-                    lista_sku.append(sku_df)
+                planilha_prc = False
 
-                for est_df in df_planilha_atualizar['EST']:
-                    lista_est.append(est_df)
+                if df_atualizar.columns[0] == 'SKU':
+                    for sku_df in df_atualizar['SKU']:
+                        lista_sku.append(sku_df)
+                        
+                    if df_atualizar.columns[1] == 'EST':
+                        mensagem('Modo atualizar estoque por planilha selecionado')
+                        print('ATENÇÃO: Produtos que estão oferecendo Full \nnão serão alterados')
 
-                sku_disp = []
-                sku_nao_disp = []
+                        for est_df in df_atualizar['EST']:
+                            valor_trocar.append(est_df)
+                        
+                    elif df_atualizar.columns[1] == 'PRC':
+                        mensagem('Modo atualizar preço por planilha selecionado')
+                        print('ATENÇÃO: Produtos com promoção ativa não serão\nalterados para não sair da promoção')
+                        planilha_prc = True
 
-                for inx_sku, lista_sku_value in enumerate(lista_sku):
-
-                    sku_mlb = str(lista_sku[inx_sku])
-                    qtd_mlb = lista_est[inx_sku]
-                    qtd_mlb = int(qtd_mlb)
-
-                    url_df = (f"{base}/users/{(access_token[-9:])}/items/search?seller_sku="
-                              f"{sku_mlb}&offset={0}")
-
-                    resposta_df = fazer_reqs(url_df, access_token)
-                    qtd_de_an = resposta_df['paging']['total']
-                    print()
-                    if qtd_de_an > 0:
-                        time.sleep(0.25)
-
-                        if qtd_de_an == 1:
-                            mensagem(f'SKU: {sku_mlb} | {qtd_de_an} Anúncio')
-
-                        else:
-                            mensagem(f'SKU: {sku_mlb} | {qtd_de_an} Anúncios')
-
-                        sku_disp.append(sku_mlb)
-
-                        pegar_produtos(sku_mlb, qtd_mlb, access_token)
+                        for prc_df in df_atualizar['PRC']:
+                            valor_trocar.append(prc_df)
 
                     else:
-                        mensagem(f'SKU: {sku_mlb} | Nenhum anúncio encontrado')
-                        sku_nao_disp.append(sku_mlb)
+                        mensagem_colorida('A planilha não segue um padrão para que seja atualizado', 'red')
+                        mensagem(f'Conta conectada: {(pegar_nome_da_conta(access_token))}')
+                        print_colorido(mensagem_base)
+                        continue
 
-                print_colorido(f'\nDisponíveis: {sku_disp}')
-                print_colorido(f'\nNão disponíveis: {sku_nao_disp}\n')
+                else:
+                    mensagem_colorida('A planilha não segue um padrão para que seja atualizado', 'red')
+                    mensagem(f'Conta conectada: {(pegar_nome_da_conta(access_token))}')
+                    print_colorido(mensagem_base)
+                    continue
+
+                continuar = input(str(f'\n{len(df_atualizar['SKU'])} SKUs para atualizar'
+                                      f'\nDeseja continuar?'
+                                      f'\n[1] Sim | [2] Não'
+                                      f'\n> '))
+
+                if continuar == '1':
+
+                    sku_disp = []
+                    sku_nao_disp = []
+
+                    for inx_sku, lista_sku_value in enumerate(lista_sku):
+
+                        sku_mlb = str(lista_sku[inx_sku])
+                        valor_mlb = valor_trocar[inx_sku]
+
+                        if not planilha_prc:
+                            valor_mlb = int(valor_mlb)
+
+                        url_df = (f"{base}/users/{(access_token[-9:])}/items/search?seller_sku="
+                                  f"{sku_mlb}&offset={0}")
+
+                        resposta_df = fazer_reqs(url_df, access_token)
+                        qtd_de_an = resposta_df['paging']['total']
+                        print()
+
+                        if qtd_de_an > 0:
+                            # time.sleep(0.25)
+                            base_print = f'SKU: {sku_mlb} | {qtd_de_an} Anúncio'
+
+                            if planilha_prc:
+                                complemento = f'Preço: R$ {valor_mlb}'
+                            else:
+                                complemento = f'Estoque: {valor_mlb}'
+
+                            if qtd_de_an == 1:
+                                mensagem(f'{base_print} | {complemento}')
+                            else:
+                                mensagem(f'{base_print}s | {complemento}')
+
+                            sku_disp.append(sku_mlb)
+
+                            pegar_produtos(sku_mlb, valor_mlb, access_token)
+
+                        else:
+                            mensagem_colorida(f'SKU: {sku_mlb} | Nenhum anúncio encontrado', 'red')
+                            sku_nao_disp.append(sku_mlb)
+
+                    print_colorido(f'\nSKUs encontrados: {sku_disp}')
+                    print_colorido(f'\nSKUs não encontrados: {sku_nao_disp}\n')
+
+                elif continuar == '2':
+                    mensagem_colorida('Você escolheu não continuar', 'red')
+
+                else:
+                    mensagem_colorida('Opção inválida', 'red')
+                    pass
 
                 mensagem(f'Conta conectada: {(pegar_nome_da_conta(access_token))}')
                 print_colorido(mensagem_base)
 
         else:
-            print_colorido('\n[X] Opção inválida | Escolha uma das opções')
+            print()
+            mensagem_colorida('[X] Opção inválida | Escolha uma das opções', 'red')
             mensagem(f'Conta conectada: {pegar_nome_da_conta(access_token)}')
             print_colorido(mensagem_base)
 
