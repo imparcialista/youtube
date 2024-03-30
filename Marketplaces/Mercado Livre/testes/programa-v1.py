@@ -176,8 +176,6 @@ def main():
             for pagina in range(paginas):
                 url = f'{base}/users/{(token_value[-9:])}/items/search?{filtro}&offset={pagina * 50}'
 
-                # msg_cima(f'Página: {pagina + 1} | Offset {pagina * 50}')
-
                 resposta = fazer_reqs(url, token_value)
 
                 for produto in resposta['results']:
@@ -365,6 +363,24 @@ def main():
 
         exportar_para_planilha(lista_retorno, drops, token_value)
 
+    def atualizar_sku(produto, sku_novo, token_value):
+        url = f'{base}/items/{produto}'
+        info_prd = fazer_reqs(url, token_value)
+
+        tit_produto = info_prd['title']
+
+        payload = json.dumps({"attributes": [{"id": "SELLER_SKU", "value_name": f"{sku_novo}"}]})
+
+        headers = {"Authorization": f"Bearer {token_value}"}
+        resposta = requests.put(url=url, headers=headers, data=payload)
+
+        if resposta.status_code != 200:
+            msg_dif('red', 'cima', f'{produto} | Não pôde ser alterado')
+
+        else:
+            msg_dif('green', 'cima',
+                    f'{produto} | SKU novo: {sku_novo} | {tit_produto}')
+
 
     def atualizar(produto, valor_atualizar, token_value):
         url = f'{base}/items/{produto}'
@@ -543,13 +559,13 @@ def main():
                 print()
                 msg_cima('[Digite VOLTAR para retornar ao menu anterior]')
                 msg_cima('O que você deseja atualizar?')
-                msg_cima('[1] Estoque | [2] Preço')
+                msg_cima('[1] Estoque | [2] Preço | [3] SKU')
                 tipo_desejado = get_input()
 
                 if tipo_desejado == 'voltar':
                     break
 
-                if tipo_desejado == '1' or tipo_desejado == '2':
+                if tipo_desejado == '1' or tipo_desejado == '2' or tipo_desejado == '3':
 
                     if tipo_desejado == '1':
                         atualizar_est = True
@@ -584,7 +600,7 @@ def main():
                                 pegar_produtos(sku_escolhido, valor_para_atualizar, token)
                                 print()
 
-                    else:
+                    elif tipo_desejado == '2':
                         atualizar_prc = True
 
                         while atualizar_prc:
@@ -607,7 +623,12 @@ def main():
                                 valor_para_atualizar = valor_para_atualizar.replace(',', '.')
 
                                 pegar_produtos(sku_escolhido, valor_para_atualizar, token)
+                    else:
+                        atualizar_sku = True
 
+                        while atualizar_sku:
+                            print('Ainda não está pronto')
+                            break
                 else:
                     msg_alerta('Opção inválida, digite apenas 1 ou 2')
 
