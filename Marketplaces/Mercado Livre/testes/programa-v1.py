@@ -363,77 +363,65 @@ def main():
 
         exportar_para_planilha(lista_retorno, drops, token_value)
 
-    def atualizar_sku(produto, sku_novo, token_value):
+    def atualizar(produto, valor_atualizar, token_value, tipo):
         url = f'{base}/items/{produto}'
         info_prd = fazer_reqs(url, token_value)
 
         tit_produto = info_prd['title']
 
-        payload = json.dumps({"attributes": [{"id": "SELLER_SKU", "value_name": f"{sku_novo}"}]})
+        if tipo == 'estoque':
+            est_prd = info_prd['available_quantity']
+            envio = info_prd['shipping']['logistic_type']
 
-        headers = {"Authorization": f"Bearer {token_value}"}
-        resposta = requests.put(url=url, headers=headers, data=payload)
+            if envio == 'cross_docking':
+                info_prd['shipping'] = 'Normal'
 
-        if resposta.status_code != 200:
-            msg_dif('red', 'cima', f'{produto} | Não pôde ser alterado')
+            elif envio == 'fulfillment':
+                info_prd['shipping'] = 'Full'
 
-        else:
-            msg_dif('green', 'cima',
-                    f'{produto} | SKU novo: {sku_novo} | {tit_produto}')
+            elif envio == 'not_specified':
+                info_prd['shipping'] = 'Não especificado'
 
+            else:
+                pass
 
-    def atualizar(produto, valor_atualizar, token_value):
-        url = f'{base}/items/{produto}'
-        info_prd = fazer_reqs(url, token_value)
-        est_prd = info_prd['available_quantity']
-
-        prc_prd = info_prd['price']
-        prc_org_prd = info_prd['original_price']
-
-        tit_produto = info_prd['title']
-
-        envio = info_prd['shipping']['logistic_type']
-
-        if envio == 'cross_docking':
-            info_prd['shipping'] = 'Normal'
-
-        elif envio == 'fulfillment':
-            info_prd['shipping'] = 'Full'
-
-        elif envio == 'not_specified':
-            info_prd['shipping'] = 'Não especificado'
-
-        else:
-            pass
-
-        if type(valor_atualizar) is int:
+            # Produtos do full não podem ser alterados
             if info_prd['shipping'] == 'Full':
                 msg_dif('yellow', 'cima', f'{produto} | Produto Full: Não alterar | {tit_produto}')
                 return
 
+            # Não vamos trocar um valor pelo mesmo valor, nós apenas deixamos como está
             if valor_atualizar == est_prd:
                 msg_dif('green', 'cima', f'{produto} | Estoque já está correto | {tit_produto}')
                 return
 
+            # Podemos ter produtos com estoque, mas que estejam inativos, nesse caso, vamos tentar atualizar para ativo
             if valor_atualizar > 0:
                 payload = json.dumps({"available_quantity": valor_atualizar, "status": "active"})
-
             else:
                 payload = json.dumps({"available_quantity": valor_atualizar})
 
-        else:
+            headers = {"Authorization": f"Bearer {token_value}"}
+            resposta = requests.put(url=url, headers=headers, data=payload)
 
+            if resposta.status_code == 200:
+                msg_dif(
+                    'green', 'cima',
+                    f'{produto} | Estoque alterado de {est_prd} para {valor_atualizar} | {tit_produto}')
+                return
+
+        elif tipo == 'preço':
+            prc_prd = info_prd['price']
+            prc_org_prd = info_prd['original_price']
+            prc_org_prd = str(prc_org_prd)
+
+            # Não vamos trocar um valor pelo mesmo valor, nós apenas deixamos como está
             if valor_atualizar == prc_prd:
                 msg_dif('green', 'cima', f'{produto} | Preço já está correto | {tit_produto}')
                 return
 
-            prc_org_prd = str(prc_org_prd)
-
-            if prc_org_prd == 'None' or prc_org_prd == 'Null':
-                payload = json.dumps({"price": valor_atualizar})
-
-            else:
-
+            # Caso contrário, vamos informar o desconto que está ativo e não atualizar
+            if prc_org_prd != 'None' and prc_org_prd != 'Null':
                 prc_prd = str(prc_prd)
                 prc_prd = prc_prd.replace('.', ',')
 
@@ -444,41 +432,57 @@ def main():
                                          f'por R$ {prc_prd} | {tit_produto}')
                 return
 
-        headers = {"Authorization": f"Bearer {token_value}"}
-        resposta = requests.put(url=url, headers=headers, data=payload)
-
-        if resposta.status_code != 200:
-            msg_dif('red', 'cima', f'{produto} | Não pôde ser alterado')
-
-        else:
-            if type(valor_atualizar) is int:
-                msg_dif('green', 'cima',
-                        f'{produto} | Estoque alterado de {est_prd} para {valor_atualizar} | {tit_produto}')
-
+            # Caso o valor de preço original esteja vazio, podemos atualizar
             else:
-                valor_atualizar = str(valor_atualizar)
-                valor_imprimir = valor_atualizar.replace('.', ',')
+                payload = json.dumps({"price": valor_atualizar})
+
+            headers = {"Authorization": f"Bearer {token_value}"}
+            resposta = requests.put(url=url, headers=headers, data=payload)
+
+            if resposta.status_code == 200:
+                valor_atualizar_imprimir = str(valor_atualizar)
+                valor_imprimir = valor_atualizar_imprimir.replace('.', ',')
 
                 prc_prd = str(prc_prd)
                 prc_prd = prc_prd.replace('.', ',')
 
-                msg_dif('green', 'cima',
-                        f'{produto} | Preço alterado de R$ {prc_prd} '
+                msg_dif('green', 'cima', f'{produto} | Preço alterado de R$ {prc_prd} '
                         f'para R$ {valor_imprimir} | {tit_produto}')
+                return
+
+        elif tipo == 'sku':
+            payload = json.dumps({"attributes": [{"id": "SELLER_SKU", "value_name": f"{valor_atualizar}"}]})
+
+            headers = {"Authorization": f"Bearer {token_value}"}
+            resposta = requests.put(url=url, headers=headers, data=payload)
+
+            if resposta.status_code == 200:
+                msg_dif('green', 'cima',
+                        f'{produto} | SKU novo: {valor_atualizar} | {tit_produto}')
+                return
+
+        else:
+            return
+
+        print('chegou aqui')
+        msg_dif('red', 'cima', f'{produto} | Não pôde ser alterado')
 
 
-    def pegar_produtos(sku, valor_atualizar, token_value):
+    def pegar_produtos(sku, valor_atualizar, token_value, tipo):
         paginas = 0
         url = f"{base}/users/{(token_value[-9:])}/items/search?seller_sku={sku}&offset={paginas}"
 
         resposta = fazer_reqs(url, token_value)
         quantidade_de_an = resposta['paging']['total']
 
-        if quantidade_de_an != 0:
+        if quantidade_de_an == 0:
 
+            msg_dif('red', 'cima', 'Nenhum anúncio encontrado')
+
+        else:
             if quantidade_de_an <= 50:
                 for produto in resposta['results']:
-                    atualizar(produto, valor_atualizar, token_value)
+                    atualizar(produto, valor_atualizar, token_value, tipo)
 
             else:
 
@@ -493,10 +497,7 @@ def main():
                     resposta = fazer_reqs(url, token_value)
 
                     for produto in resposta['results']:
-                        atualizar(produto, valor_atualizar, token_value)
-
-        else:
-            msg_dif('red', 'cima', 'Nenhum anúncio encontrado')
+                        atualizar(produto, valor_atualizar, token_value, tipo)
 
 
     def get_input():
@@ -504,6 +505,16 @@ def main():
         input_user = input_user.lower()
         input_user = input_user.strip()
         return input_user
+
+
+    def pegar_sku():
+        print()
+        msg('[Digite VOLTAR para retornar ao menu anterior]')
+        msg_cima('Qual SKU você deseja atualizar?')
+        sku_escolhido_input = input('> ')
+        sku_escolhido_input = sku_escolhido_input.strip()
+        return sku_escolhido_input
+
 
     mensagem_base = (
         '\n[*] Escolha uma das opções'
@@ -562,75 +573,84 @@ def main():
                 msg_cima('[1] Estoque | [2] Preço | [3] SKU')
                 tipo_desejado = get_input()
 
-                if tipo_desejado == 'voltar':
-                    break
+                atualizador = True
+                while atualizador:
+                    if tipo_desejado != 'voltar':
+                        if tipo_desejado == '1' or tipo_desejado == '2' or tipo_desejado == '3':
+                            if tipo_desejado == '1':
+                                tipo_escolhido = 'estoque'
 
-                if tipo_desejado == '1' or tipo_desejado == '2' or tipo_desejado == '3':
-
-                    if tipo_desejado == '1':
-                        atualizar_est = True
-
-                        while atualizar_est:
-                            print()
-                            msg('[Digite VOLTAR para retornar ao menu anterior]')
-                            msg_cima('Qual SKU você deseja atualizar o estoque?')
-                            sku_escolhido = input('> ')
-                            sku_escolhido = sku_escolhido.strip()
-                            voltar = sku_escolhido.lower()
-
-                            if voltar == 'voltar':
-                                break
+                            elif tipo_desejado == '2':
+                                tipo_escolhido = 'preço'
 
                             else:
-                                print()
-                                valor_para_atualizar = input('Para qual quantidade você deseja atualizar?\n> ')
+                                # Sobrou apenas atualizar SKU
+                                tipo_escolhido = 'sku'
 
-                                try:
-                                    valor_para_atualizar = int(valor_para_atualizar)
-
-                                except:
+                            if tipo_escolhido == 'estoque':
+                                sku_escolhido = pegar_sku()
+                                if sku_escolhido != 'voltar':
                                     print()
-                                    msg_alerta('[ERRO: Insira apenas números inteiros]')
+                                    valor_para_atualizar = input('Qual o novo estoque?\n> ')
+
+                                    try:
+                                        valor_para_atualizar = int(valor_para_atualizar)
+
+                                    except:
+                                        print()
+                                        msg_alerta('[ERRO: Insira apenas números inteiros]')
+                                        break
+
+                                    msg_cima(f'(SOLICITAÇÃO DE ALTERAÇÃO)')
+                                    print()
+                                    msg_dif('green', 'cima',
+                                            f'SKU: {sku_escolhido} | Estoque: {valor_para_atualizar}')
+
+                                    pegar_produtos(sku_escolhido, valor_para_atualizar, token, tipo_escolhido)
+                                    print()
+                                else:
                                     break
 
-                                msg_cima(f'(SOLICITAÇÃO DE ALTERAÇÃO)')
-                                print()
-                                msg_dif('green', 'cima',
-                                        f'SKU: {sku_escolhido} | Estoque: {valor_para_atualizar}')
-                                pegar_produtos(sku_escolhido, valor_para_atualizar, token)
-                                print()
+                            elif tipo_escolhido == 'preço':
+                                sku_escolhido = pegar_sku()
+                                if sku_escolhido != 'voltar':
+                                    print()
+                                    valor_para_atualizar = input(str('Qual o novo preço?\n> R$ '))
+                                    valor_para_atualizar = valor_para_atualizar.replace('.', '')
 
-                    elif tipo_desejado == '2':
-                        atualizar_prc = True
+                                    msg_dif('green', 'cima',
+                                            f'(SOLICITAÇÃO DE ALTERAÇÃO)')
 
-                        while atualizar_prc:
-                            print()
-                            msg('[Digite VOLTAR para retornar ao menu anterior]')
-                            msg_cima('Qual SKU você deseja atualizar o preço?')
-                            sku_escolhido = get_input()
+                                    msg_dif('green', 'cima',
+                                            f'SKU: {sku_escolhido} | Preço: R$ {valor_para_atualizar}')
 
-                            if sku_escolhido == 'voltar':
-                                msg('Você escolheu voltar')
-                                break
+                                    valor_para_atualizar = valor_para_atualizar.replace(',', '.')
 
+                                    pegar_produtos(sku_escolhido, valor_para_atualizar, token, tipo_escolhido)
+                                    print()
+                                else:
+                                    break
                             else:
-                                print()
-                                valor_para_atualizar = input(str('Para qual preço você deseja atualizar?\n> '))
-                                valor_para_atualizar = valor_para_atualizar.replace('.', '')
+                                sku_escolhido = pegar_sku()
+                                if sku_escolhido != 'voltar':
+                                    print()
+                                    valor_para_atualizar = input('Qual o novo SKU?\n> ')
 
-                                msg_dif('green', 'cima', f'(SOLICITAÇÃO DE ALTERAÇÃO)')
-                                msg_dif('green', 'cima', f'SKU: {sku_escolhido} | Preço: R$ {valor_para_atualizar}')
-                                valor_para_atualizar = valor_para_atualizar.replace(',', '.')
+                                    msg_cima(f'(SOLICITAÇÃO DE ALTERAÇÃO)')
+                                    print()
+                                    msg_dif('green', 'cima',
+                                            f'SKU antigo: {sku_escolhido} | SKU Novo: {valor_para_atualizar}')
 
-                                pegar_produtos(sku_escolhido, valor_para_atualizar, token)
+                                    pegar_produtos(sku_escolhido, valor_para_atualizar, token, tipo_escolhido)
+                                    print()
+
+                                else:
+                                    break
+
+                        else:
+                            msg_alerta('Opção inválida, digite apenas 1, 2 ou 3')
                     else:
-                        atualizar_sku = True
-
-                        while atualizar_sku:
-                            print('Ainda não está pronto')
-                            break
-                else:
-                    msg_alerta('Opção inválida, digite apenas 1 ou 2')
+                        break
 
         elif escolha == '6' or escolha == 'atualizar por planilha':
             planilha_atualizar = dlg.askopenfilename(filetypes=[("Arquivos excel", ".xlsx")])
@@ -647,6 +667,7 @@ def main():
                 valor_trocar = []
 
                 planilha_prc = False
+                planilha_sku = False
 
                 if df_atualizar.columns[0] == 'SKU':
                     for sku_df in df_atualizar['SKU']:
@@ -654,6 +675,7 @@ def main():
 
                     if df_atualizar.columns[1] == 'EST':
                         msg_cima('Modo atualizar estoque por planilha selecionado')
+                        tipo_escolhido_planilha = 'estoque'
                         msg_alerta('ATENÇÃO: Produtos que estão oferecendo Full não serão alterados')
 
                         for est_df in df_atualizar['EST']:
@@ -661,10 +683,20 @@ def main():
 
                     elif df_atualizar.columns[1] == 'PRC':
                         msg_cima('Modo atualizar preço por planilha selecionado')
+                        tipo_escolhido_planilha = 'preço'
                         msg_alerta('ATENÇÃO: Produtos com promoção ativa não serão alterados para não sair da promoção')
                         planilha_prc = True
 
                         for prc_df in df_atualizar['PRC']:
+                            valor_trocar.append(prc_df)
+
+                    elif df_atualizar.columns[1] == 'EST':
+                        msg_cima('Modo atualizar SKUs por planilha selecionado')
+                        tipo_escolhido_planilha = 'SKU'
+                        msg_alerta('ATENÇÃO: A troca de SKUs pode levar um tempo para ser refletida no Mercado Livre')
+                        planilha_sku = True
+
+                        for prc_df in df_atualizar['EST']:
                             valor_trocar.append(prc_df)
 
                     else:
@@ -706,6 +738,8 @@ def main():
                                 valor_imprimir_novo.replace('.', ',')
                                 complemento = f'Preço: R$ {valor_imprimir_novo}'
 
+                            elif planilha_sku:
+                                complemento = f'SKU: {valor_mlb}'
                             else:
                                 complemento = f'Estoque: {valor_mlb}'
 
@@ -717,7 +751,7 @@ def main():
 
                             sku_disp.append(sku_mlb)
 
-                            pegar_produtos(sku_mlb, valor_mlb, token)
+                            pegar_produtos(sku_mlb, valor_mlb, token, tipo_escolhido_planilha)
 
                         else:
                             msg_alerta(f'SKU: {sku_mlb} | Nenhum anúncio encontrado')
