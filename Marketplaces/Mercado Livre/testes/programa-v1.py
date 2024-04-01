@@ -112,7 +112,6 @@ def main():
 
 
     def pegar_todos_ids(token_value):
-        msg_destaque(f'Conta conectada: {(nome_conta(token_value))}')
         lista = []
         inicio_timer = time.time()
         paginas = 0
@@ -138,7 +137,6 @@ def main():
                 quantidade_de_an -= 100
                 paginas += 1
 
-            msg_cima(f'Páginas para percorrer: {paginas}')
             paginas = paginas - 1
 
             lista_scroll = []
@@ -171,8 +169,6 @@ def main():
                 quantidade_de_an -= 50
                 paginas += 1
 
-            msg_cima(f'Páginas para percorrer: {paginas}')
-
             for pagina in range(paginas):
                 url = f'{base}/users/{(token_value[-9:])}/items/search?{filtro}&offset={pagina * 50}'
 
@@ -195,7 +191,7 @@ def main():
 
         fim_timer = time.time()
         msg_cima(f'{nome_conta(token)}: Todos os IDS foram coletados ')
-        msg_cima(f'Tempo de execução: {fim_timer - inicio_timer} segundos')
+        msg_cima(f'Tempo de execução: {(int(fim_timer - inicio_timer)) + 1} segundos')
 
         return lista
 
@@ -258,7 +254,7 @@ def main():
             lista_geral.append(lista_concatenada)
             gap_vinte += 20
 
-        msg(f'Por favor aguarde | Tempo aproximado {(0.38 * paginas)+1} segundos')
+        msg(f'Por favor aguarde | Tempo aproximado {(int((0.39 * paginas)) + 2)} segundos')
 
         for i_pack, pack in enumerate(lista_geral):
 
@@ -346,7 +342,7 @@ def main():
                 lista_retorno.append(body)
 
         fim_timer = time.time()
-        msg(f"Informações coletadas. Tempo de execução: {fim_timer - inicio_timer} segundos")
+        msg(f"Informações coletadas. Tempo de execução: {(int(fim_timer - inicio_timer)) + 1} segundos")
 
         drops = [
             'site_id', 'official_store_id', 'user_product_id', 'seller_id', 'category_id', 'inventory_id',
@@ -464,7 +460,6 @@ def main():
         else:
             return
 
-        print('chegou aqui')
         msg_dif('red', 'cima', f'{produto} | Não pôde ser alterado')
 
 
@@ -517,18 +512,16 @@ def main():
 
 
     mensagem_base = (
-        '\n[*] Escolha uma das opções'
-        '\n[1] Atualizar planilha'
-        '\n[2] Atualizar lista de IDs'
-        '\n[3] Trocar de conta'
-        '\n[4] Abre a planilha com todos os produtos da conta'
-        '\n[5] Atualize preço/estoque por SKU'
-        '\n[6] Atualizar preço/estoque por planilha'
+        '\n[*] Escolha uma opção'
+        '\n[1] Trocar de conta'
+        '\n[2] Atualizar planilha'
+        '\n[3] Abrir a planilha'
+        '\n[4] Atualizar por SKU'
+        '\n[5] Atualizar por planilha'
         '\n')
 
     msg_destaque('Programa feito por @imparcialista  v1.0')
-    token = configurar_conta()
-    msg_destaque(f'Conta conectada: {(nome_conta(token))}')
+    token = ''
     msg('Digite SAIR para encerrar o programa')
     msg(mensagem_base)
 
@@ -543,28 +536,44 @@ def main():
             msg('Digite SAIR para encerrar o programa')
             msg(mensagem_base)
 
-        elif escolha == '1' or escolha == 'atualizar planilha':
-            gerar_planilha(token)
-
-        elif escolha == '2' or escolha == 'atualizar ids':
-            pegar_todos_ids(token)
-
-        elif escolha == '3' or escolha == 'trocar de conta':
+        elif escolha == '1' or escolha == 'trocar de conta':
             token = configurar_conta()
 
-        elif escolha == '4' or escolha == 'abrir planilha':
-            path = f'Arquivos/{(nome_conta(token))}/{(token[-9:])}-planilha-produtos.xlsx'
-            path = os.path.realpath(path)
+        elif escolha == '2' or escolha == 'atualizar planilha':
+            if token == '':
+                token = configurar_conta()
 
+            gerar_planilha(token)
+
+        elif escolha == '3' or escolha == 'abrir planilha':
+            if token == '':
+                token = configurar_conta()
+
+            path = f'Arquivos/{(nome_conta(token))}/{(token[-9:])}-planilha-produtos.xlsx'
             if not os.path.exists(path):
-                msg_cima('A planilha ainda não existe, gerando a planilha...')
+                gerar_planilha(token)
+
+            path = os.path.realpath(path)
+            df_tamanho = pd.read_excel(path)
+            tamanho_planilha = len(df_tamanho['id'])
+
+            filtro_4 = ''
+            url_4 = f'{base}/users/{(token[-9:])}/items/search?{filtro_4}&offset={0}'
+            resposta_4 = fazer_reqs(url_4, token)
+            qtd_de_an_4 = resposta_4['paging']['total']
+
+            if tamanho_planilha != qtd_de_an_4:
+                msg_cima('Gerando a planilha...')
                 gerar_planilha(token)
 
             msg('Abrindo o arquivo...')
             os.startfile(path)
             msg('Arquivo aberto')
 
-        elif escolha == '5' or escolha == 'atualizador':
+        elif escolha == '4' or escolha == 'atualizador':
+            if token == '':
+                token = configurar_conta()
+
             atualizar_info = True
             while atualizar_info:
                 print()
@@ -649,10 +658,14 @@ def main():
 
                         else:
                             msg_alerta('Opção inválida, digite apenas 1, 2 ou 3')
+                            break
                     else:
                         break
+                break
+        elif escolha == '5' or escolha == 'atualizar por planilha':
+            if token == '':
+                token = configurar_conta()
 
-        elif escolha == '6' or escolha == 'atualizar por planilha':
             planilha_atualizar = dlg.askopenfilename(filetypes=[("Arquivos excel", ".xlsx")])
 
             if planilha_atualizar == '':
@@ -666,6 +679,7 @@ def main():
                 lista_sku = []
                 valor_trocar = []
 
+                planilha_est = False
                 planilha_prc = False
                 planilha_sku = False
 
@@ -677,6 +691,7 @@ def main():
                         msg_cima('Modo atualizar estoque por planilha selecionado')
                         tipo_escolhido_planilha = 'estoque'
                         msg_alerta('ATENÇÃO: Produtos que estão oferecendo Full não serão alterados')
+                        planilha_est = True
 
                         for est_df in df_atualizar['EST']:
                             valor_trocar.append(est_df)
@@ -690,14 +705,14 @@ def main():
                         for prc_df in df_atualizar['PRC']:
                             valor_trocar.append(prc_df)
 
-                    elif df_atualizar.columns[1] == 'EST':
+                    elif df_atualizar.columns[1] == 'SKUs':
                         msg_cima('Modo atualizar SKUs por planilha selecionado')
-                        tipo_escolhido_planilha = 'SKU'
+                        tipo_escolhido_planilha = 'sku'
                         msg_alerta('ATENÇÃO: A troca de SKUs pode levar um tempo para ser refletida no Mercado Livre')
                         planilha_sku = True
 
-                        for prc_df in df_atualizar['EST']:
-                            valor_trocar.append(prc_df)
+                        for sku_df in df_atualizar['SKUs']:
+                            valor_trocar.append(sku_df)
 
                     else:
                         msg_alerta('A planilha não segue um padrão para que seja atualizado')
@@ -720,7 +735,7 @@ def main():
                         sku_mlb = str(lista_sku[inx_sku])
                         valor_mlb = valor_trocar[inx_sku]
 
-                        if not planilha_prc:
+                        if planilha_est:
                             valor_mlb = int(valor_mlb)
 
                         url_df = (f"{base}/users/{(token[-9:])}/items/search?seller_sku="
@@ -750,7 +765,6 @@ def main():
                                 msg_dif('green', 'cima', f'{base_print}s | {complemento}')
 
                             sku_disp.append(sku_mlb)
-
                             pegar_produtos(sku_mlb, valor_mlb, token, tipo_escolhido_planilha)
 
                         else:
@@ -767,10 +781,15 @@ def main():
                     msg_alerta('Opção inválida')
                     pass
 
+            msg('Digite SAIR para encerrar o programa')
+            msg(mensagem_base)
+
         else:
             print()
             msg_alerta('Opção inválida | Escolha uma das opções')
-            msg_destaque(f'Conta conectada: {nome_conta(token)}')
+            if token != '':
+                msg_destaque(f'Conta conectada: {nome_conta(token)}')
+
             msg(mensagem_base)
 
 
