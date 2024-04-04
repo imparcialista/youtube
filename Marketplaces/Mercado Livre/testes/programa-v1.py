@@ -83,7 +83,7 @@ def main():
             token_value = input(str('> '))
 
             headers = {'Authorization': f'Bearer {token_value}'}
-            resposta = requests.get(f'https://api.mercadolibre.com/users/me', headers=headers)
+            resposta = requests.get(f'{base}/users/me', headers=headers)
 
             if resposta.status_code == 200:
                 os.system('CLS')
@@ -258,7 +258,7 @@ def main():
 
         for i_pack, pack in enumerate(lista_geral):
 
-            url = f'https://api.mercadolibre.com/items?ids={pack}'
+            url = f'{base}/items?ids={pack}'
             retorno = fazer_reqs(url, token_value)
 
             for grupo_de_itens in retorno:
@@ -518,6 +518,7 @@ def main():
         '\n[3] Abrir a planilha'
         '\n[4] Atualizar por SKU'
         '\n[5] Atualizar por planilha'
+        '\n[6] Mais vendidos por categoria'
         '\n')
 
     msg_destaque('Programa feito por @imparcialista  v1.0')
@@ -783,6 +784,125 @@ def main():
 
             msg('Digite SAIR para encerrar o programa')
             msg(mensagem_base)
+        elif escolha == '6':
+            if token == '':
+                token = configurar_conta()
+
+            msg_cima('Qual o código da categoria? Exemplo: MLB432825')
+
+            categoria = input(str('> '))
+
+            # categoria = 'MLB432825'
+
+            url_cat = f'{base}/highlights/MLB/category/{categoria}'
+            retorno_cat = fazer_reqs(url_cat, token)
+
+            retorno_cat = retorno_cat['content']
+
+            lista_categoria = []
+            lista_retorno_cat = []
+
+            for inx_cat, item in enumerate(retorno_cat):
+                print(inx_cat + 1, item)
+                lista_categoria.append(item)
+
+                print(item['id'])
+                produto = item['id']
+                tipo_produto = item['type']
+                if tipo_produto == 'PRODUCT':
+                    url_cat_2 = f'{base}/products/{produto}'
+                else:
+                    url_cat_2 = f'{base}/items/{produto}'
+
+                prd_cat = fazer_reqs(url_cat_2, token)
+
+                print(prd_cat)
+
+                # tit_produto = prd_cat['title']
+
+                # est_prd_cat = prd_cat['available_quantity']
+
+                '''
+                envio_cat = prd_cat['shipping']['logistic_type']
+
+                if envio_cat == 'cross_docking':
+                    prd_cat['shipping'] = 'Normal'
+
+                elif envio_cat == 'fulfillment':
+                    prd_cat['shipping'] = 'Full'
+
+                elif envio_cat == 'not_specified':
+                    prd_cat['shipping'] = 'Não especificado'
+
+                else:
+                    pass
+
+                atributos = prd_cat['attributes']
+
+                for atributo in atributos:
+                    if atributo['id'] == 'SELLER_SKU':
+                        sku = atributo['values'][0]['name']
+                        prd_cat['attributes'] = sku
+                        break
+
+                    else:
+                        prd_cat['attributes'] = ''
+
+                if prd_cat['status'] == 'active':
+                    prd_cat['status'] = 'Ativo'
+
+                elif prd_cat['status'] == 'paused':
+                    prd_cat['status'] = 'Pausado'
+
+                elif prd_cat['status'] == 'closed':
+                    prd_cat['status'] = 'Fechado'
+
+                elif prd_cat['status'] == 'under_review':
+                    prd_cat['status'] = 'Sob revisão'
+                else:
+                    pass
+
+                criado = prd_cat['date_created']
+                atua = prd_cat['last_updated']
+
+                prd_cat['date_created'] = f'{criado[8:10]}/{criado[5:7]}/{criado[0:4]} {criado[11:19]}'
+                prd_cat['last_updated'] = f'{atua[8:10]}/{atua[5:7]}/{atua[0:4]} {atua[11:19]}'
+
+                porcentagem = prd_cat['health']
+
+                try:
+                    float(porcentagem)
+                    prd_cat['health'] = f'{(float(porcentagem)) * 100}%'
+
+                except:
+                    pass
+
+                if prd_cat['catalog_listing'] == 'TRUE':
+                    prd_cat['catalog_listing'] = 'Verdadeiro'
+                else:
+                    prd_cat['catalog_listing'] = 'Falso'
+
+                if len(prd_cat['item_relations']) == 0:
+                    prd_cat['item_relations'] = 'Sem relação'
+                else:
+                    prd_cat['item_relations'] = prd_cat['item_relations'][0]['id']
+
+                if len(prd_cat['channels']) == 2:
+                    prd_cat['channels'] = 'Vendido em ambos canais'
+
+                elif prd_cat['channels'][0] == 'marketplace':
+                    prd_cat['channels'] = 'Vendido apenas no Mercado Livre'
+
+                elif prd_cat['channels'][0] == 'mshops':
+                    prd_cat['channels'] = 'Vendido apenas no Mercado Shops'
+
+                else:
+                    pass
+
+                lista_retorno_cat.append(prd_cat)
+                '''
+
+            # print(retorno_cat)
 
         else:
             print()
