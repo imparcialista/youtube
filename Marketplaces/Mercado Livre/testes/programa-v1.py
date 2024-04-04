@@ -802,12 +802,15 @@ def main():
             lista_categoria = []
             lista_retorno_cat = []
 
+            print('Carregando, por favor aguarde...')
+
             for inx_cat, item in enumerate(retorno_cat):
-                print(inx_cat + 1, item)
+                # print(inx_cat + 1, item)
                 lista_categoria.append(item)
 
-                print(item['id'])
+                # print(item['id'])
                 produto = item['id']
+
                 tipo_produto = item['type']
                 if tipo_produto == 'PRODUCT':
                     url_cat_2 = f'{base}/products/{produto}'
@@ -816,93 +819,36 @@ def main():
 
                 prd_cat = fazer_reqs(url_cat_2, token)
 
-                print(prd_cat)
+                # print(prd_cat)
 
-                # tit_produto = prd_cat['title']
-
-                # est_prd_cat = prd_cat['available_quantity']
-
-                '''
-                envio_cat = prd_cat['shipping']['logistic_type']
-
-                if envio_cat == 'cross_docking':
-                    prd_cat['shipping'] = 'Normal'
-
-                elif envio_cat == 'fulfillment':
-                    prd_cat['shipping'] = 'Full'
-
-                elif envio_cat == 'not_specified':
-                    prd_cat['shipping'] = 'Não especificado'
-
+                if tipo_produto == 'PRODUCT':
+                    id_prd_cat = prd_cat['buy_box_winner']['item_id']
+                    title_prd_cat = prd_cat['name']
+                    seller_id_cat = prd_cat['buy_box_winner']['seller_id']
+                    
                 else:
-                    pass
+                    id_prd_cat = prd_cat['id']
+                    title_prd_cat = prd_cat['title']
+                    seller_id_cat = prd_cat['seller_id']
 
-                atributos = prd_cat['attributes']
 
-                for atributo in atributos:
-                    if atributo['id'] == 'SELLER_SKU':
-                        sku = atributo['values'][0]['name']
-                        prd_cat['attributes'] = sku
-                        break
+                headers_cat = {'Authorization': f'Bearer {token}'}
+                resposta_cat = requests.get(f'{base}/users/{seller_id_cat}', headers=headers_cat)
+                resposta_cat = resposta_cat.json()
+                conta_cat = resposta_cat['nickname']
 
-                    else:
-                        prd_cat['attributes'] = ''
+                seller_id_cat = conta_cat
 
-                if prd_cat['status'] == 'active':
-                    prd_cat['status'] = 'Ativo'
+                # print(id_prd_cat, title_prd_cat, seller_id_cat)
 
-                elif prd_cat['status'] == 'paused':
-                    prd_cat['status'] = 'Pausado'
+                lista_retorno_cat.append([id_prd_cat, title_prd_cat, seller_id_cat])
 
-                elif prd_cat['status'] == 'closed':
-                    prd_cat['status'] = 'Fechado'
+            df_cat = pd.DataFrame(lista_retorno_cat, columns=['ID ANÚNCIO', 'TÍTULO DO ANÚNCIO', 'NOME DA LOJA'])
+            # print(df_cat)
 
-                elif prd_cat['status'] == 'under_review':
-                    prd_cat['status'] = 'Sob revisão'
-                else:
-                    pass
+            df_cat.to_excel(f'Categoria-{categoria}.xlsx', index=False)
+            print(f'Arquivo gerado Categoria-{categoria}.xlsx')
 
-                criado = prd_cat['date_created']
-                atua = prd_cat['last_updated']
-
-                prd_cat['date_created'] = f'{criado[8:10]}/{criado[5:7]}/{criado[0:4]} {criado[11:19]}'
-                prd_cat['last_updated'] = f'{atua[8:10]}/{atua[5:7]}/{atua[0:4]} {atua[11:19]}'
-
-                porcentagem = prd_cat['health']
-
-                try:
-                    float(porcentagem)
-                    prd_cat['health'] = f'{(float(porcentagem)) * 100}%'
-
-                except:
-                    pass
-
-                if prd_cat['catalog_listing'] == 'TRUE':
-                    prd_cat['catalog_listing'] = 'Verdadeiro'
-                else:
-                    prd_cat['catalog_listing'] = 'Falso'
-
-                if len(prd_cat['item_relations']) == 0:
-                    prd_cat['item_relations'] = 'Sem relação'
-                else:
-                    prd_cat['item_relations'] = prd_cat['item_relations'][0]['id']
-
-                if len(prd_cat['channels']) == 2:
-                    prd_cat['channels'] = 'Vendido em ambos canais'
-
-                elif prd_cat['channels'][0] == 'marketplace':
-                    prd_cat['channels'] = 'Vendido apenas no Mercado Livre'
-
-                elif prd_cat['channels'][0] == 'mshops':
-                    prd_cat['channels'] = 'Vendido apenas no Mercado Shops'
-
-                else:
-                    pass
-
-                lista_retorno_cat.append(prd_cat)
-                '''
-
-            # print(retorno_cat)
 
         else:
             print()
