@@ -551,6 +551,7 @@ def main():
                 token = configurar_conta()
 
             path = f'Arquivos/{(nome_conta(token))}/{(token[-9:])}-planilha-produtos.xlsx'
+
             if not os.path.exists(path):
                 gerar_planilha(token)
 
@@ -663,6 +664,7 @@ def main():
                     else:
                         break
                 break
+
         elif escolha == '5' or escolha == 'atualizar por planilha':
             if token == '':
                 token = configurar_conta()
@@ -792,8 +794,6 @@ def main():
 
             categoria = input(str('> '))
 
-            # categoria = 'MLB432825'
-
             url_cat = f'{base}/highlights/MLB/category/{categoria}'
             retorno_cat = fazer_reqs(url_cat, token)
 
@@ -805,21 +805,17 @@ def main():
             print('Carregando, por favor aguarde...')
 
             for inx_cat, item in enumerate(retorno_cat):
-                # print(inx_cat + 1, item)
                 lista_categoria.append(item)
 
-                # print(item['id'])
-                produto = item['id']
+                produto_cat = item['id']
 
                 tipo_produto = item['type']
                 if tipo_produto == 'PRODUCT':
-                    url_cat_2 = f'{base}/products/{produto}'
+                    url_cat_2 = f'{base}/products/{produto_cat}'
                 else:
-                    url_cat_2 = f'{base}/items/{produto}'
+                    url_cat_2 = f'{base}/items/{produto_cat}'
 
                 prd_cat = fazer_reqs(url_cat_2, token)
-
-                # print(prd_cat)
 
                 if tipo_produto == 'PRODUCT':
                     id_prd_cat = prd_cat['buy_box_winner']['item_id']
@@ -831,7 +827,6 @@ def main():
                     title_prd_cat = prd_cat['title']
                     seller_id_cat = prd_cat['seller_id']
 
-
                 headers_cat = {'Authorization': f'Bearer {token}'}
                 resposta_cat = requests.get(f'{base}/users/{seller_id_cat}', headers=headers_cat)
                 resposta_cat = resposta_cat.json()
@@ -839,16 +834,12 @@ def main():
 
                 seller_id_cat = conta_cat
 
-                # print(id_prd_cat, title_prd_cat, seller_id_cat)
-
                 lista_retorno_cat.append([id_prd_cat, title_prd_cat, seller_id_cat])
 
             df_cat = pd.DataFrame(lista_retorno_cat, columns=['ID ANÚNCIO', 'TÍTULO DO ANÚNCIO', 'NOME DA LOJA'])
-            # print(df_cat)
 
-            df_cat.to_excel(f'Categoria-{categoria}.xlsx', index=False)
+            df_cat.to_excel(f'Categoria-{categoria}.xlsx', index=True)
             print(f'Arquivo gerado Categoria-{categoria}.xlsx')
-
 
         else:
             print()
