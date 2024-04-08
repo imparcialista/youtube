@@ -805,7 +805,7 @@ def main():
             retorno_cat = retorno_cat['content']
 
             lista_categoria = []
-            lista_retorno_cat = []
+            lst_ret_cat = []
 
             print('Carregando, por favor aguarde...')
 
@@ -813,8 +813,8 @@ def main():
                 lista_categoria.append(item)
 
                 produto_cat = item['id']
-                tipo_produto = item['type']
 
+                tipo_produto = item['type']
                 if tipo_produto == 'PRODUCT':
                     url_cat_2 = f'{base}/products/{produto_cat}'
 
@@ -827,11 +827,34 @@ def main():
                     id_prd_cat = prd_cat['buy_box_winner']['item_id']
                     title_prd_cat = prd_cat['name']
                     seller_id_cat = prd_cat['buy_box_winner']['seller_id']
-                    
+                    price_cat = prd_cat['buy_box_winner']['price']
+
                 else:
                     id_prd_cat = prd_cat['id']
                     title_prd_cat = prd_cat['title']
                     seller_id_cat = prd_cat['seller_id']
+                    price_cat = prd_cat['buy_box_winner']['price']
+
+                envio_cat = prd_cat['buy_box_winner']['shipping']['logistic_type']
+
+                if envio_cat == 'cross_docking':
+                    prd_cat['buy_box_winner']['shipping'] = 'Normal'
+
+                elif envio_cat == 'fulfillment':
+                    prd_cat['buy_box_winner']['shipping'] = 'Full'
+
+                elif envio_cat == 'not_specified':
+                    prd_cat['buy_box_winner']['shipping'] = 'Não especificado'
+
+                else:
+                    pass
+
+                seller_address = prd_cat['buy_box_winner']['seller_address']
+
+                cidade = seller_address['city']['name']
+                estado = seller_address['state']['name']
+
+                endereco_seller = f'{estado}, {cidade}'
 
                 headers_cat = {'Authorization': f'Bearer {token}'}
                 resposta_cat = requests.get(f'{base}/users/{seller_id_cat}', headers=headers_cat)
@@ -840,9 +863,9 @@ def main():
 
                 seller_id_cat = conta_cat
 
-                lista_retorno_cat.append([id_prd_cat, title_prd_cat, seller_id_cat])
+                lst_ret_cat.append([id_prd_cat, title_prd_cat, seller_id_cat, price_cat, endereco_seller])
 
-            df_cat = pd.DataFrame(lista_retorno_cat, columns=['ID ANÚNCIO', 'TÍTULO DO ANÚNCIO', 'NOME DA LOJA'])
+            df_cat = pd.DataFrame(lst_ret_cat, columns=['ID MLB', 'TÍTULO', 'LOJA', 'PREÇO', 'ENDEREÇO'])
 
             df_cat.to_excel(f'Categoria-{categoria}.xlsx', index=True)
             print(f'Arquivo gerado Categoria-{categoria}.xlsx')
