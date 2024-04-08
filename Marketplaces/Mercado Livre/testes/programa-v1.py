@@ -641,6 +641,7 @@ def main():
                                     print()
                                 else:
                                     break
+
                             else:
                                 sku_escolhido = pegar_sku()
                                 if sku_escolhido != 'voltar':
@@ -661,8 +662,10 @@ def main():
                         else:
                             msg_alerta('Opção inválida, digite apenas 1, 2 ou 3')
                             break
+
                     else:
                         break
+
                 break
 
         elif escolha == '5' or escolha == 'atualizar por planilha':
@@ -758,6 +761,7 @@ def main():
 
                             elif planilha_sku:
                                 complemento = f'SKU: {valor_mlb}'
+
                             else:
                                 complemento = f'Estoque: {valor_mlb}'
 
@@ -786,6 +790,7 @@ def main():
 
             msg('Digite SAIR para encerrar o programa')
             msg(mensagem_base)
+
         elif escolha == '6':
             if token == '':
                 token = configurar_conta()
@@ -808,10 +813,11 @@ def main():
                 lista_categoria.append(item)
 
                 produto_cat = item['id']
-
                 tipo_produto = item['type']
+
                 if tipo_produto == 'PRODUCT':
                     url_cat_2 = f'{base}/products/{produto_cat}'
+
                 else:
                     url_cat_2 = f'{base}/items/{produto_cat}'
 
@@ -844,6 +850,7 @@ def main():
         else:
             print()
             msg_alerta('Opção inválida | Escolha uma das opções')
+
             if token != '':
                 msg_destaque(f'Conta conectada: {nome_conta(token)}')
 
