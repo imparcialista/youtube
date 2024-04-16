@@ -580,8 +580,8 @@ def main():
         if quantidade_de_an == 0:
             mensagem = 'Nenhum anúncio encontrado'
             msg_dif('red', 'cima', mensagem)
-            lista_feitos.append(mensagem)
-            return lista_feitos
+            # lista_feitos.append(mensagem)
+            # return lista_feitos
 
         else:
             if quantidade_de_an <= 50:
