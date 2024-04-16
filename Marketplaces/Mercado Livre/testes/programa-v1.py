@@ -492,11 +492,11 @@ def main():
                 valor_supermercado = valor_atualizar[1]
 
                 if "supermarket_eligible" in info_prd['tags']:
-                    print('produto de supermercado')
+                    print(f'{produto} |produto de supermercado')
                     novo_valor_atualizar = valor_supermercado
                 else:
                     novo_valor_atualizar = valor_mercado_livre
-                    print('produto normal')
+                    print(f'{produto} |produto normal')
             else:
                 novo_valor_atualizar = valor_atualizar
 
