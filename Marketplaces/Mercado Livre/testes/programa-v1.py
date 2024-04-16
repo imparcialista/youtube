@@ -391,6 +391,20 @@ def main():
 
         tit_produto = info_prd['title']
 
+        atributos = info_prd['attributes']
+        
+        sku_produto = ''
+
+        for atributo in atributos:
+            if atributo['id'] == 'SELLER_SKU':
+                sku_produto = atributo['values'][0]['name']
+                break
+
+            else:
+                sku_produto = ''
+
+        info_an = f'{produto} | {sku_produto} |'
+
         if tipo == 'estoque':
             est_prd = info_prd['available_quantity']
             envio = info_prd['shipping']['logistic_type']
@@ -409,19 +423,23 @@ def main():
 
             # Produtos do full não podem ser alterados
             if info_prd['shipping'] == 'Full':
-                mensagem = f'{produto} | Produto Full: Não alterar | {tit_produto}'
+                mensagem = f'{info_an} Produto Full: Não alterar | {tit_produto}'
                 msg_dif('yellow', 'cima', mensagem)
                 return mensagem
 
             # Não vamos trocar um valor pelo mesmo valor, nós apenas deixamos como está
             if valor_atualizar == est_prd:
-                mensagem = f'{produto} | Estoque já está correto | {tit_produto}'
+                mensagem = f'{info_an} Estoque já está correto | {tit_produto}'
                 msg_dif('green', 'cima', mensagem)
                 return mensagem
 
             # Podemos ter produtos com estoque, mas que estejam inativos, nesse caso, vamos tentar atualizar para ativo
             if valor_atualizar > 0:
                 payload = json.dumps({"available_quantity": valor_atualizar, "status": "active"})
+                
+            elif valor_atualizar < 0:
+                payload = json.dumps({"available_quantity": 0})
+                
             else:
                 payload = json.dumps({"available_quantity": valor_atualizar})
 
@@ -429,7 +447,7 @@ def main():
             resposta = requests.put(url=url, headers=headers, data=payload)
 
             if resposta.status_code == 200:
-                mensagem = f'{produto} | Estoque alterado de {est_prd} para {valor_atualizar} | {tit_produto}'
+                mensagem = f'{info_an} Estoque alterado de {est_prd} para {valor_atualizar} | {tit_produto}'
                 msg_dif('green', 'cima', mensagem)
                 return mensagem
 
@@ -440,7 +458,7 @@ def main():
 
             # Não vamos trocar um valor pelo mesmo valor, nós apenas deixamos como está
             if valor_atualizar == prc_prd:
-                mensagem = f'{produto} | Preço já está correto | {tit_produto}'
+                mensagem = f'{info_an} Preço já está correto | {tit_produto}'
                 msg_dif('green', 'cima', mensagem)
                 return mensagem
 
@@ -452,7 +470,7 @@ def main():
                 prc_org_prd = str(prc_org_prd)
                 prc_org_prd = prc_org_prd.replace('.', ',')
 
-                mensagem = f'{produto} | Desconto ativo de R$ {prc_org_prd} por R$ {prc_prd} | {tit_produto}'
+                mensagem = f'{info_an} Desconto ativo de R$ {prc_org_prd} por R$ {prc_prd} | {tit_produto}'
                 msg_dif('green', 'cima', mensagem)
 
                 return mensagem
@@ -471,7 +489,7 @@ def main():
                 prc_prd = str(prc_prd)
                 prc_prd = prc_prd.replace('.', ',')
 
-                mensagem = f'{produto} | Preço alterado de R$ {prc_prd} para R$ {valor_imprimir} | {tit_produto}'
+                mensagem = f'{info_an} Preço alterado de R$ {prc_prd} para R$ {valor_imprimir} | {tit_produto}'
                 msg_dif('green', 'cima', mensagem)
                 return mensagem
 
@@ -482,21 +500,22 @@ def main():
             resposta = requests.put(url=url, headers=headers, data=payload)
 
             if resposta.status_code == 200:
-                mensagem = f'{produto} | SKU novo: {valor_atualizar} | {tit_produto}'
+                mensagem = f'{info_an} SKU novo: {valor_atualizar} | {tit_produto}'
                 msg_dif('green', 'cima', mensagem)
                 return mensagem
 
         elif tipo == 'desconto':
+            
             if type(valor_atualizar) is list:
                 valor_mercado_livre = valor_atualizar[0]
                 valor_supermercado = valor_atualizar[1]
 
                 if "supermarket_eligible" in info_prd['tags']:
-                    print(f'{produto} |produto de supermercado')
+                    # print(f'{produto} |produto de supermercado')
                     novo_valor_atualizar = valor_supermercado
                 else:
                     novo_valor_atualizar = valor_mercado_livre
-                    print(f'{produto} |produto normal')
+                    # print(f'{produto} |produto normal')
             else:
                 novo_valor_atualizar = valor_atualizar
 
@@ -511,7 +530,7 @@ def main():
                 prc_org_prd = str(prc_org_prd)
                 prc_org_prd = prc_org_prd.replace('.', ',')
 
-                mensagem = f'{produto} | Desconto ativo de R$ {prc_org_prd} por R$ {prc_prd} | {tit_produto}'
+                mensagem = f'{info_an} Desconto ativo de R$ {prc_org_prd} por R$ {prc_prd} | {tit_produto}'
                 msg_dif('green', 'cima', mensagem)
                 return mensagem
 
@@ -540,12 +559,12 @@ def main():
                 prc_prd = str(prc_prd)
                 prc_prd = prc_prd.replace('.', ',')
 
-                mensagem = f'{produto} | De R$ {prc_prd} por R$ {valor_imprimir} com desconto| {tit_produto}'
+                mensagem = f'{info_an} De R$ {prc_prd} por R$ {valor_imprimir} com desconto | {tit_produto}'
                 msg_dif('green', 'cima', mensagem)
                 return mensagem
 
         else:
-            mensagem = f'{produto} | Não pôde ser alterado'
+            mensagem = f'{info_an} Não pôde ser alterado'
             msg_dif('red', 'cima', mensagem)
             return mensagem
 
@@ -559,8 +578,10 @@ def main():
         quantidade_de_an = resposta['paging']['total']
 
         if quantidade_de_an == 0:
-
-            msg_dif('red', 'cima', 'Nenhum anúncio encontrado')
+            mensagem = 'Nenhum anúncio encontrado'
+            msg_dif('red', 'cima', mensagem)
+            lista_feitos.append(mensagem)
+            return lista_feitos
 
         else:
             if quantidade_de_an <= 50:
@@ -861,7 +882,7 @@ def main():
 
                     sku_disp = []
                     sku_nao_disp = []
-
+                    registros = []
                     for inx_sku, lista_sku_value in enumerate(lista_sku):
 
                         sku_mlb = str(lista_sku[inx_sku])
@@ -914,14 +935,24 @@ def main():
                             if planilha_des:
                                 valor_mlb = [valor_mlb, valor_desconto]
 
-                            pegar_produtos(sku_mlb, valor_mlb, token, tipo_escolhido_planilha)
+                            registro_sku = pegar_produtos(sku_mlb, valor_mlb, token, tipo_escolhido_planilha)
+                            registros.append(registro_sku)
 
                         else:
-                            msg_alerta(f'SKU: {sku_mlb} | Nenhum anúncio encontrado')
+                            registro_nenhum_an = f'SKU: {sku_mlb} | Nenhum anúncio encontrado'
+                            msg_alerta(registro_nenhum_an)
                             sku_nao_disp.append(sku_mlb)
+                            registros.append(registro_nenhum_an)
 
                     msg(f'\nSKUs encontrados: {sku_disp}')
                     msg(f'\nSKUs não encontrados: {sku_nao_disp}\n')
+
+                    with open('registro.txt', 'w') as reg:
+                        for item_reg in registros:
+                            for item_reg_un in item_reg:
+                                print(item_reg_un)
+                                nova_linha = f'{item_reg_un}\n'
+                                reg.write(nova_linha)
 
                 elif continuar == '2':
                     msg_alerta('Você escolheu não continuar')
