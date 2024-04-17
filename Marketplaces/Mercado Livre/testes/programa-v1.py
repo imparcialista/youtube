@@ -84,8 +84,8 @@ def main():
         msg_dif('green', 'ambos', f'{mensagem}')
 
 
-    def fazer_reqs(url, token_value):
-        headers = {'Authorization': f'Bearer {token_value}'}
+    def fazer_reqs(url, tv):
+        headers = {'Authorization': f'Bearer {tv}'}
         resposta = requests.get(f'{url}', headers=headers)
 
         tentativa = 1
@@ -109,38 +109,38 @@ def main():
         conta_configurada = False
         while not conta_configurada:
             msg_cima('Insira o Access Token')
-            token_value = input(str('> '))
+            tv = input(str('> '))
 
-            headers = {'Authorization': f'Bearer {token_value}'}
+            headers = {'Authorization': f'Bearer {tv}'}
             resposta = requests.get(f'{base}/users/me', headers=headers)
 
             if resposta.status_code == 200:
                 os.system('CLS')
-                return token_value
+                return tv
 
             else:
                 msg_aviso('Access Token inválido ou expirado')
 
 
-    def nome_conta(token_value):
-        nome_retorno = fazer_reqs(f'{base}/users/me', token_value)
+    def nome_conta(tv):
+        nome_retorno = fazer_reqs(f'{base}/users/me', tv)
         conta = nome_retorno['nickname']
         return conta
 
 
-    def pegar_scroll_id(token_value):
-        url = f'{base}/users/{(token_value[-9:])}/items/search?search_type=scan&limit=100'
-        resposta = fazer_reqs(url, token_value)
+    def pegar_scroll_id(tv):
+        url = f'{base}/users/{(tv[-9:])}/items/search?search_type=scan&limit=100'
+        resposta = fazer_reqs(url, tv)
         return resposta
 
 
-    def proxima_pagina(scroll, token_value):
-        url = f'{base}/users/{(token_value[-9:])}/items/search?search_type=scan&scroll_id={scroll}&limit=100'
-        resposta = fazer_reqs(url, token_value)
+    def proxima_pagina(scroll, tv):
+        url = f'{base}/users/{(tv[-9:])}/items/search?search_type=scan&scroll_id={scroll}&limit=100'
+        resposta = fazer_reqs(url, tv)
         return resposta
 
 
-    def pegar_todos_ids(token_value):
+    def pegar_todos_ids(tv):
         lista = []
         inicio_timer = time.time()
         paginas = 0
@@ -150,8 +150,8 @@ def main():
         else:
             filtro = ''
 
-        url = f'{base}/users/{(token_value[-9:])}/items/search?{filtro}&offset={0}'
-        resposta = fazer_reqs(url, token_value)
+        url = f'{base}/users/{(tv[-9:])}/items/search?{filtro}&offset={0}'
+        resposta = fazer_reqs(url, tv)
 
         quantidade_de_an = resposta['paging']['total']
 
@@ -169,7 +169,7 @@ def main():
             paginas = paginas - 1
 
             lista_scroll = []
-            primeiro_scroll = pegar_scroll_id(token_value)
+            primeiro_scroll = pegar_scroll_id(tv)
             msg_cima('Coletando IDs, por favor aguarde...')
 
             lista_scroll.append(primeiro_scroll['scroll_id'])
@@ -178,7 +178,7 @@ def main():
 
 
             def gerar_scroll(scroll_anterior):
-                scroll = proxima_pagina(scroll_anterior, token_value)
+                scroll = proxima_pagina(scroll_anterior, tv)
 
                 for id_mlb in scroll['results']:
                     lista.append(id_mlb)
@@ -199,9 +199,9 @@ def main():
                 paginas += 1
 
             for pagina in range(paginas):
-                url = f'{base}/users/{(token_value[-9:])}/items/search?{filtro}&offset={pagina * 50}'
+                url = f'{base}/users/{(tv[-9:])}/items/search?{filtro}&offset={pagina * 50}'
 
-                resposta = fazer_reqs(url, token_value)
+                resposta = fazer_reqs(url, tv)
 
                 for produto in resposta['results']:
                     lista.append(produto)
@@ -210,7 +210,7 @@ def main():
             os.makedirs(f'Arquivos/{nome_conta(token)}')
             msg_cima(f'Pasta {nome_conta(token)} criada')
 
-        arquivo_json = f'Arquivos/{nome_conta(token)}/{(token_value[-9:])}-ids_mlb.json'
+        arquivo_json = f'Arquivos/{nome_conta(token)}/{(tv[-9:])}-ids_mlb.json'
 
         if os.path.exists(arquivo_json):
             os.remove(arquivo_json)
@@ -225,8 +225,8 @@ def main():
         return lista
 
 
-    def exportar_para_planilha(lista_json: list, colunas_drop: list, token_value):
-        arquivo_json = (f'Arquivos/{(nome_conta(token_value))}/{(token_value[-9:])}'
+    def exportar_para_planilha(lista_json: list, colunas_drop: list, tv):
+        arquivo_json = (f'Arquivos/{(nome_conta(tv))}/{(tv[-9:])}'
                         f'-retorno-produtos.json')
 
         if os.path.exists(arquivo_json):
@@ -237,8 +237,8 @@ def main():
 
         df = pd.read_json(arquivo_json)
         df = df.drop(colunas_drop, axis=1, errors='ignore')
-        planilha = (f'Arquivos/{nome_conta(token_value)}/'
-                    f'{(token_value[-9:])}-planilha-produtos.xlsx')
+        planilha = (f'Arquivos/{nome_conta(tv)}/'
+                    f'{(tv[-9:])}-planilha-produtos.xlsx')
 
         if os.path.exists(planilha):
             os.remove(planilha)
@@ -252,15 +252,15 @@ def main():
         msg(f'Planilha gerada')
 
 
-    def gerar_planilha(token_value):
-        ids_mlb = f'Arquivos/{nome_conta(token_value)}/{(token_value[-9:])}-ids_mlb.json'
+    def gerar_planilha(tv):
+        ids_mlb = f'Arquivos/{nome_conta(tv)}/{(tv[-9:])}-ids_mlb.json'
         lista_retorno = []
         lista_geral = []
         gap_vinte = 0
         paginas = 0
 
         if not os.path.exists(ids_mlb):
-            pegar_todos_ids(token_value)
+            pegar_todos_ids(tv)
 
         inicio_timer = time.time()
 
@@ -288,7 +288,7 @@ def main():
         for i_pack, pack in enumerate(lista_geral):
 
             url = f'{base}/items?ids={pack}'
-            retorno = fazer_reqs(url, token_value)
+            retorno = fazer_reqs(url, tv)
 
             for grupo_de_itens in retorno:
                 body = grupo_de_itens['body']
@@ -371,7 +371,7 @@ def main():
                 lista_retorno.append(body)
 
         fim_timer = time.time()
-        msg(f"Informações coletadas. Tempo de execução: {(int(fim_timer - inicio_timer)) + 1} segundos")
+        msg(f'Informações coletadas. Tempo de execução: {(int(fim_timer - inicio_timer)) + 1} segundos')
 
         drops = [
             'site_id', 'official_store_id', 'user_product_id', 'seller_id', 'category_id', 'inventory_id',
@@ -383,11 +383,11 @@ def main():
             'stop_time', 'end_time', 'expiration_time', 'condition', 'seller_custom_field'
             ]
 
-        exportar_para_planilha(lista_retorno, drops, token_value)
+        exportar_para_planilha(lista_retorno, drops, tv)
 
-    def atualizar(produto, valor_atualizar, token_value, tipo):
+    def atualizar(produto, valor_atualizar, tv, tipo):
         url = f'{base}/items/{produto}'
-        info_prd = fazer_reqs(url, token_value)
+        info_prd = fazer_reqs(url, tv)
 
         tit_produto = info_prd['title']
 
@@ -408,6 +408,9 @@ def main():
         if tipo == 'estoque':
             est_prd = info_prd['available_quantity']
             envio = info_prd['shipping']['logistic_type']
+
+            if valor_atualizar < 0:
+                valor_atualizar = 0
 
             if envio == 'cross_docking':
                 info_prd['shipping'] = 'Normal'
@@ -436,19 +439,20 @@ def main():
             # Podemos ter produtos com estoque, mas que estejam inativos, nesse caso, vamos tentar atualizar para ativo
             if valor_atualizar > 0:
                 payload = json.dumps({"available_quantity": valor_atualizar, "status": "active"})
-                
-            elif valor_atualizar < 0:
-                payload = json.dumps({"available_quantity": 0})
-                
             else:
                 payload = json.dumps({"available_quantity": valor_atualizar})
 
-            headers = {"Authorization": f"Bearer {token_value}"}
+            headers = {"Authorization": f"Bearer {tv}"}
             resposta = requests.put(url=url, headers=headers, data=payload)
 
             if resposta.status_code == 200:
                 mensagem = f'{info_an} Estoque alterado de {est_prd} para {valor_atualizar} | {tit_produto}'
                 msg_dif('green', 'cima', mensagem)
+                return mensagem
+
+            else:
+                mensagem = f'{info_an} Não pôde ser alterado | {tit_produto}'
+                msg_dif('red', 'cima', mensagem)
                 return mensagem
 
         elif tipo == 'preço':
@@ -472,14 +476,13 @@ def main():
 
                 mensagem = f'{info_an} Desconto ativo de R$ {prc_org_prd} por R$ {prc_prd} | {tit_produto}'
                 msg_dif('green', 'cima', mensagem)
-
                 return mensagem
 
             # Caso o valor de preço original esteja vazio, podemos atualizar
             else:
                 payload = json.dumps({"price": valor_atualizar})
 
-            headers = {"Authorization": f"Bearer {token_value}"}
+            headers = {"Authorization": f"Bearer {tv}"}
             resposta = requests.put(url=url, headers=headers, data=payload)
 
             if resposta.status_code == 200:
@@ -493,15 +496,25 @@ def main():
                 msg_dif('green', 'cima', mensagem)
                 return mensagem
 
+            else:
+                mensagem = f'{info_an} Não pôde ser alterado | {tit_produto}'
+                msg_dif('red', 'cima', mensagem)
+                return mensagem
+
         elif tipo == 'sku':
             payload = json.dumps({"attributes": [{"id": "SELLER_SKU", "value_name": f"{valor_atualizar}"}]})
 
-            headers = {"Authorization": f"Bearer {token_value}"}
+            headers = {"Authorization": f"Bearer {tv}"}
             resposta = requests.put(url=url, headers=headers, data=payload)
 
             if resposta.status_code == 200:
                 mensagem = f'{info_an} SKU novo: {valor_atualizar} | {tit_produto}'
                 msg_dif('green', 'cima', mensagem)
+                return mensagem
+
+            else:
+                mensagem = f'{info_an} Não pôde ser alterado | {tit_produto}'
+                msg_dif('red', 'cima', mensagem)
                 return mensagem
 
         elif tipo == 'desconto':
@@ -510,12 +523,12 @@ def main():
                 valor_mercado_livre = valor_atualizar[0]
                 valor_supermercado = valor_atualizar[1]
 
-                if "supermarket_eligible" in info_prd['tags']:
-                    # print(f'{produto} |produto de supermercado')
+                if 'supermarket_eligible' in info_prd['tags']:
+                    # print(f'{produto} | produto de supermercado')
                     novo_valor_atualizar = valor_supermercado
                 else:
                     novo_valor_atualizar = valor_mercado_livre
-                    # print(f'{produto} |produto normal')
+                    # print(f'{produto} | produto normal')
             else:
                 novo_valor_atualizar = valor_atualizar
 
@@ -536,6 +549,13 @@ def main():
 
             # Caso o valor de preço original esteja vazio, podemos atualizar
             else:
+
+                if prc_prd >= 79:
+                    if novo_valor_atualizar < 79:
+                        mensagem = f'{info_an} Não alterar: Desconto abaixo do valor de frete grátis | {tit_produto}'
+                        msg_dif('green', 'cima', mensagem)
+                        return mensagem
+
                 datas_desconto = pegar_datas()
 
                 dt_desconto = datas_desconto[0]
@@ -549,7 +569,7 @@ def main():
                     })
 
             url = f'{base}/seller-promotions/items/{produto}?app_version=v2'
-            headers = {"Authorization": f"Bearer {token_value}"}
+            headers = {"Authorization": f"Bearer {tv}"}
             resposta = requests.request("POST", url=url, headers=headers, data=payload)
 
             if resposta.status_code == 201:
@@ -563,30 +583,31 @@ def main():
                 msg_dif('green', 'cima', mensagem)
                 return mensagem
 
-        else:
-            mensagem = f'{info_an} Não pôde ser alterado'
-            msg_dif('red', 'cima', mensagem)
-            return mensagem
+            else:
+                mensagem = f'{info_an} Não pôde ser alterado | {tit_produto}'
+                msg_dif('red', 'cima', mensagem)
+                return mensagem
 
 
-    def pegar_produtos(sku, valor_atualizar, token_value, tipo):
+    def pegar_produtos(sku, valor_atualizar, tv, tipo):
         lista_feitos = []
         paginas = 0
-        url = f"{base}/users/{(token_value[-9:])}/items/search?seller_sku={sku}&offset={paginas}"
+        url = f"{base}/users/{(tv[-9:])}/items/search?seller_sku={sku}&offset={paginas}"
 
-        resposta = fazer_reqs(url, token_value)
+        resposta = fazer_reqs(url, tv)
         quantidade_de_an = resposta['paging']['total']
 
         if quantidade_de_an == 0:
             mensagem = 'Nenhum anúncio encontrado'
             msg_dif('red', 'cima', mensagem)
-            # lista_feitos.append(mensagem)
-            # return lista_feitos
+            lista_qtd_zero = [mensagem]
+            lista_feitos.append(lista_qtd_zero)
+            return lista_feitos
 
         else:
             if quantidade_de_an <= 50:
                 for produto in resposta['results']:
-                    feito = atualizar(produto, valor_atualizar, token_value, tipo)
+                    feito = atualizar(produto, valor_atualizar, tv, tipo)
                     lista_feitos.append(feito)
 
             else:
@@ -596,13 +617,13 @@ def main():
                     paginas += 1
 
                 for pagina in range(paginas):
-                    url = (f"{base}/users/{(token_value[-9:])}"
+                    url = (f"{base}/users/{(tv[-9:])}"
                            f"/items/search?seller_sku={sku}&offset={(pagina * 50)}")
 
-                    resposta = fazer_reqs(url, token_value)
+                    resposta = fazer_reqs(url, tv)
 
                     for produto in resposta['results']:
-                        feito = atualizar(produto, valor_atualizar, token_value, tipo)
+                        feito = atualizar(produto, valor_atualizar, tv, tipo)
                         lista_feitos.append(feito)
 
             return lista_feitos
@@ -818,11 +839,13 @@ def main():
                 lista_sku = []
                 valor_trocar = []
                 desconto_sm = []
+                estoque_mlb = []
 
                 planilha_est = False
                 planilha_prc = False
                 planilha_sku = False
                 planilha_des = False
+                planilha_des_e_est = False
 
                 if df_atualizar.columns[0] == 'SKU':
                     for sku_df in df_atualizar['SKU']:
@@ -840,23 +863,27 @@ def main():
                     elif df_atualizar.columns[1] == 'Preço':
                         msg_cima('Modo atualizar preço por planilha selecionado')
                         tipo_escolhido_planilha = 'preço'
-                        msg_alerta('ATENÇÃO: Produtos com promoção ativa não serão alterados para não sair da promoção')
+                        msg_alerta('ATENÇÃO: Produtos com promoção ativa não serão alterados')
                         planilha_prc = True
 
                         for prc_df in df_atualizar['Preço']:
                             valor_trocar.append(prc_df)
 
-                    elif df_atualizar.columns[1] == 'Desconto ML':
+                    elif df_atualizar.columns[1] == 'Desconto ML' or df_atualizar.columns[1] == 'Desconto SM':
                         msg_cima('Modo atualizar desconto por planilha selecionado')
                         tipo_escolhido_planilha = 'desconto'
-                        msg_alerta('ATENÇÃO: Produtos com promoção ativa não serão alterados para não sair da promoção')
-                        planilha_des = True
+                        msg_alerta('ATENÇÃO: Produtos com promoção ativa não serão alterados')
+                        # planilha_des = True
+                        planilha_des_e_est = True
 
                         for prc_df in df_atualizar['Desconto ML']:
                             valor_trocar.append(prc_df)
 
-                        for desconto_df in df_atualizar['Desconto SM']:
-                            desconto_sm.append(desconto_df)
+                        for dsc_df in df_atualizar['Desconto SM']:
+                            desconto_sm.append(dsc_df)
+
+                        for est_df in df_atualizar['Estoque']:
+                            estoque_mlb.append(est_df)
 
                     elif df_atualizar.columns[1] == 'SKU Novo':
                         msg_cima('Modo atualizar SKUs por planilha selecionado')
@@ -879,19 +906,24 @@ def main():
                 continuar = input(str('> '))
 
                 if continuar == '1':
-
                     sku_disp = []
                     sku_nao_disp = []
                     registros = []
+
                     for inx_sku, lista_sku_value in enumerate(lista_sku):
 
                         sku_mlb = str(lista_sku[inx_sku])
                         valor_mlb = valor_trocar[inx_sku]
 
-                        if planilha_des:
+                        # if planilha_des:
+                        if planilha_des_e_est:
                             valor_desconto = desconto_sm[inx_sku]
+                            est_mlb = estoque_mlb[inx_sku]
+                            est_mlb = int(est_mlb)
+
                         else:
                             valor_desconto = ''
+                            est_mlb = ''
 
                         if planilha_est:
                             valor_mlb = int(valor_mlb)
@@ -911,11 +943,18 @@ def main():
                                 valor_imprimir_novo.replace('.', ',')
                                 complemento = f'Preço: R$ {valor_imprimir_novo}'
 
+                            elif planilha_des_e_est:
+                                valor_imprimir_novo = str(valor_mlb)
+                                valor_desconto_imprimir = str(valor_desconto)
+                                valor_imprimir_novo.replace('.', ',')
+                                complemento = (f'Preços com desconto | ML R$ {valor_imprimir_novo} | SM R$'
+                                               f' {valor_desconto_imprimir} | Estoque: {est_mlb}')
+
                             elif planilha_des:
                                 valor_imprimir_novo = str(valor_mlb)
                                 valor_desconto_imprimir = str(valor_desconto)
                                 valor_imprimir_novo.replace('.', ',')
-                                complemento = (f'Preço com desconto | ML R$ {valor_imprimir_novo} | SM R$'
+                                complemento = (f'Preços com desconto | ML R$ {valor_imprimir_novo} | SM R$'
                                                f' {valor_desconto_imprimir}')
 
                             elif planilha_sku:
@@ -932,17 +971,26 @@ def main():
 
                             sku_disp.append(sku_mlb)
 
+                            if planilha_des_e_est:
+                                # valor_mlb = [valor_mlb, valor_desconto, est_mlb]
+                                valor_mlb = [valor_mlb, valor_desconto]
+                                registro_est = pegar_produtos(sku_mlb, est_mlb, token, 'estoque')
+                                registros.append(registro_est)
+
                             if planilha_des:
                                 valor_mlb = [valor_mlb, valor_desconto]
 
                             registro_sku = pegar_produtos(sku_mlb, valor_mlb, token, tipo_escolhido_planilha)
+
                             registros.append(registro_sku)
+
 
                         else:
                             registro_nenhum_an = f'SKU: {sku_mlb} | Nenhum anúncio encontrado'
                             msg_alerta(registro_nenhum_an)
                             sku_nao_disp.append(sku_mlb)
-                            registros.append(registro_nenhum_an)
+                            lista_reg_zero = [registro_nenhum_an]
+                            registros.append(lista_reg_zero)
 
                     msg(f'\nSKUs encontrados: {sku_disp}')
                     msg(f'\nSKUs não encontrados: {sku_nao_disp}\n')
