@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 
-# Esse programa utiliza a tabela gerada no Melhor Envio para Amazon
+# Esse backup utiliza a tabela gerada no Melhor Envio para Amazon
 
 # Aqui você pode mudar o nome do arquivo
 seu_nome_do_arquivo = 'tabela_amz.xlsx'
