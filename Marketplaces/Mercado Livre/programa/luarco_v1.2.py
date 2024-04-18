@@ -621,6 +621,12 @@ def main():
                 prc_org_prd = prc_org_prd.replace('.', ',')
 
                 if float(novo_valor_atualizar) < comp_prc:
+                    if comp_prc >= 79:
+                        if novo_valor_atualizar < 79:
+                            mensagem = (f'{info_an} Não alterar: Desconto abaixo do valor de frete grátis | '
+                                        f'{tit_produto}')
+                            msg_dif('white', '', mensagem)
+                            return mensagem
                     mensagem = (f'{info_an} Pode ser vendido por R$ {novo_valor_atualizar} Desconto ativo de R$'
                                 f' {prc_org_prd} por R$ {prc_prd} | {tit_produto}')
                     msg_dif('white', '', mensagem)
@@ -639,13 +645,6 @@ def main():
                         time.sleep(2)
                         msg_dif('yellow', '', 'Recriando promoção, por favor aguarde...')
                         time.sleep(12)
-
-                        if comp_prc >= 79:
-                            if novo_valor_atualizar < 79:
-                                mensagem = (f'{info_an} Não alterar: Desconto abaixo do valor de frete grátis | '
-                                            f'{tit_produto}')
-                                msg_dif('white', '', mensagem)
-                                return mensagem
 
                         datas_desconto = pegar_datas()
 
