@@ -31,15 +31,11 @@ def main():
 
         data_e_hora_atuais = data_e_hora_sao_paulo
         pegar_minuto = data_e_hora_atuais.minute
-        # print(pegar_minuto)
-        # minuto = data_e_hora_atuais.minute + 1
 
         if pegar_minuto == 59:
             minuto = pegar_minuto
-            # print(minuto)
         else:
             minuto = pegar_minuto + 1
-            # print(minuto)
 
         mes = data_e_hora_atuais.month + 1
         data_alterada = data_e_hora_atuais.replace(minute=minuto)
@@ -397,7 +393,6 @@ def main():
     def atualizar(produto, valor_atualizar, tv, tipo):
         url = f'{base}/items/{produto}'
         info_prd = fazer_reqs(url, tv)
-        # print(info_prd)
         vendedor = nome_conta(tv)
         tit_produto = info_prd['title']
 
@@ -460,7 +455,7 @@ def main():
 
         except:
             pass
-        '''
+        
 
         # Produto de catálogo
         tipo_de_an = ''
@@ -477,23 +472,23 @@ def main():
             prd_relacionado = 'Sem relação'                          # Não
         else:
             prd_relacionado = info_prd['item_relations'][0]['id']    # Sim
-
+        '''
         # Canal de venda
         canal = ''
 
         if len(info_prd['channels']) == 2:
-            canal = 'Canal: Ambos'
+            canal = 'Ambos'
 
         elif info_prd['channels'][0] == 'marketplace':
-            canal = 'Canal: Mercado Livre'
+            canal = 'Mercado Livre'
 
         elif info_prd['channels'][0] == 'mshops':
-            canal = 'Canal: Mercado Shops'
+            canal = 'Mercado Shops'
 
         else:
             pass
 
-        info_an = f'{vendedor} | {status} | {sku_produto} | {produto} | Envio: {tipo_envio} | {canal} |'
+        info_an = f'{vendedor} | {status} | {sku_produto} | {produto} | {tipo_envio} | {canal} |'
 
         if tipo == 'estoque':
             est_prd = info_prd['available_quantity']
@@ -503,7 +498,7 @@ def main():
 
             # Produtos do full não podem ser alterados
             if info_prd['shipping'] == 'Full':
-                mensagem = f'{info_an} Produto Full: Não alterar | {tit_produto}'
+                mensagem = f'{info_an} Estoque no Full | {tit_produto}'
                 msg_dif('white', '', mensagem)
                 return mensagem
 
@@ -539,7 +534,7 @@ def main():
 
             # Não vamos trocar um valor pelo mesmo valor, nós apenas deixamos como está
             if valor_atualizar == prc_prd:
-                mensagem = f'{info_an} Preço já está correto | {tit_produto}'
+                mensagem = f'{info_an} Preço correto | {tit_produto}'
                 msg_dif('white', '', mensagem)
                 return mensagem
 
@@ -595,17 +590,15 @@ def main():
                 return mensagem
 
         elif tipo == 'desconto':
-            
+
             if type(valor_atualizar) is list:
                 valor_mercado_livre = valor_atualizar[0]
                 valor_supermercado = valor_atualizar[1]
 
                 if 'supermarket_eligible' in info_prd['tags']:
-                    # print(f'{produto} | produto de supermercado')
                     novo_valor_atualizar = valor_supermercado
                 else:
                     novo_valor_atualizar = valor_mercado_livre
-                    # print(f'{produto} | produto normal')
             else:
                 novo_valor_atualizar = valor_atualizar
 
@@ -613,14 +606,86 @@ def main():
             prc_org_prd = info_prd['original_price']
             prc_org_prd = str(prc_org_prd)
 
+            if status != 'Ativo':
+                mensagem = f'{info_an} Anúncio inativo | {tit_produto}'
+                msg_dif('red', '', mensagem)
+                return mensagem
+
             if prc_org_prd != 'None' and prc_org_prd != 'Null':
+                comp_prc = prc_prd
                 prc_prd = str(prc_prd)
+
                 prc_prd = prc_prd.replace('.', ',')
 
                 prc_org_prd = str(prc_org_prd)
                 prc_org_prd = prc_org_prd.replace('.', ',')
 
-                mensagem = f'{info_an} Desconto ativo: De R$ {prc_org_prd} por R$ {prc_prd} | {tit_produto}'
+                if float(novo_valor_atualizar) < comp_prc:
+                    mensagem = (f'{info_an} Pode ser vendido por R$ {novo_valor_atualizar} Desconto ativo de R$'
+                                f' {prc_org_prd} por R$ {prc_prd} | {tit_produto}')
+                    msg_dif('white', '', mensagem)
+
+                    modo_safe = False
+
+                    if modo_safe:
+                        deseja_atualizar = input(str('Envie 1 se deseja alterar\n> '))
+                    else:
+                        deseja_atualizar = '1'
+
+                    if deseja_atualizar == '1':
+                        url = f'{base}/seller-promotions/items/{produto}?promotion_type=PRICE_DISCOUNT&app_version=v2'
+                        headers = {"Authorization": f"Bearer {tv}"}
+                        requests.request("DELETE", url=url, headers=headers)
+                        time.sleep(2)
+                        msg_dif('yellow', '', 'Recriando promoção, por favor aguarde...')
+                        time.sleep(12)
+
+                        if comp_prc >= 79:
+                            if novo_valor_atualizar < 79:
+                                mensagem = (f'{info_an} Não alterar: Desconto abaixo do valor de frete grátis | '
+                                            f'{tit_produto}')
+                                msg_dif('white', '', mensagem)
+                                return mensagem
+
+                        datas_desconto = pegar_datas()
+
+                        dt_desconto = datas_desconto[0]
+                        dt_futuro = datas_desconto[1]
+
+                        payload = json.dumps(
+                                {
+                                    "deal_price"    : float(novo_valor_atualizar),
+                                    "start_date"    : dt_desconto,
+                                    "finish_date"   : dt_futuro,
+                                    "promotion_type": "PRICE_DISCOUNT"
+                                    })
+
+                        url = f'{base}/seller-promotions/items/{produto}?app_version=v2'
+
+                        headers = {"Authorization": f"Bearer {tv}"}
+                        resposta = requests.request("POST", url=url, headers=headers, data=payload)
+
+                        if resposta.status_code == 201:
+                            valor_atualizar_imprimir = str(novo_valor_atualizar)
+                            valor_imprimir = valor_atualizar_imprimir.replace('.', ',')
+
+                            prc_prd = str(prc_prd)
+                            prc_prd = prc_prd.replace('.', ',')
+
+                            mensagem = (f'{info_an} Desconto recriado: De R$ {prc_prd} por R$ {valor_imprimir} |'
+                                        f' {tit_produto}')
+                            msg_dif('green', '', mensagem)
+                            return mensagem
+
+                        else:
+                            mensagem = f'{info_an} Não pôde ser alterado | {tit_produto}'
+                            msg_dif('red', '', mensagem)
+                            return mensagem
+                    else:
+                        return mensagem
+
+                else:
+                    mensagem = f'{info_an} Promoção ativa: De R$ {prc_org_prd} por R$ {prc_prd} | {tit_produto}'
                 msg_dif('white', '', mensagem)
                 return mensagem
 
@@ -646,6 +711,7 @@ def main():
                     })
 
             url = f'{base}/seller-promotions/items/{produto}?app_version=v2'
+
             headers = {"Authorization": f"Bearer {tv}"}
             resposta = requests.request("POST", url=url, headers=headers, data=payload)
 
@@ -1061,7 +1127,6 @@ def main():
                             registro_sku = pegar_produtos(sku_mlb, valor_mlb, token, tipo_escolhido_planilha)
 
                             registros.append(registro_sku)
-
 
                         else:
                             registro_nenhum_an = f'SKU: {sku_mlb} | Nenhum anúncio encontrado'
