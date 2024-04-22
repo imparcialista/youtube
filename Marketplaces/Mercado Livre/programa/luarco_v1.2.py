@@ -396,6 +396,8 @@ def main():
         vendedor = nome_conta(tv)
         tit_produto = info_prd['title']
 
+        ret_planilha = []
+
         # SKU
         atributos = info_prd['attributes']
         sku_produto = ''
@@ -407,6 +409,12 @@ def main():
 
         # Envio
         envio = info_prd['shipping']['logistic_type']
+        frete = info_prd['shipping']['free_shipping']
+
+        if frete:
+            frete = 'Grátis'
+        else:
+            frete = 'Pago'
 
         if envio == 'cross_docking':
             tipo_envio = 'Normal'
@@ -473,6 +481,7 @@ def main():
         else:
             prd_relacionado = info_prd['item_relations'][0]['id']    # Sim
         '''
+
         # Canal de venda
         canal = ''
 
@@ -488,7 +497,7 @@ def main():
         else:
             pass
 
-        info_an = f'{vendedor} | {status} | {sku_produto} | {produto} | {tipo_envio} | {canal} |'
+        info_an = f'{vendedor} | {status} | {sku_produto} | {produto} | {tipo_envio} | {frete} | {canal} |'
 
         if tipo == 'estoque':
             est_prd = info_prd['available_quantity']
@@ -590,14 +599,16 @@ def main():
                 return mensagem
 
         elif tipo == 'desconto':
-
+            supermercado = False
             if type(valor_atualizar) is list:
                 valor_mercado_livre = valor_atualizar[0]
                 valor_supermercado = valor_atualizar[1]
 
                 if 'supermarket_eligible' in info_prd['tags']:
                     novo_valor_atualizar = valor_supermercado
+                    supermercado = True
                 else:
+                    supermercado = False
                     novo_valor_atualizar = valor_mercado_livre
             else:
                 novo_valor_atualizar = valor_atualizar
@@ -621,17 +632,24 @@ def main():
                 prc_org_prd = prc_org_prd.replace('.', ',')
 
                 if float(novo_valor_atualizar) < comp_prc:
-                    if comp_prc >= 79:
-                        if novo_valor_atualizar < 79:
-                            mensagem = (f'{info_an} Não alterar: Desconto abaixo do valor de frete grátis | '
-                                        f'{tit_produto}')
-                            msg_dif('white', '', mensagem)
-                            return mensagem
-                    mensagem = (f'{info_an} Pode ser vendido por R$ {novo_valor_atualizar} Desconto ativo de R$'
-                                f' {prc_org_prd} por R$ {prc_prd} | {tit_produto}')
+                    if not supermercado:
+                        if comp_prc < 79 and frete == 'Grátis':
+                            input('Produto com frete grátis abaixo de 79, por favor altere. Aperte ENTER para '
+                                  'continuar')
+
+                        if comp_prc >= 79:
+                            if novo_valor_atualizar < 79:
+                                mensagem = (f'{info_an} Não alterar: Desconto abaixo do valor de frete grátis | '
+                                            f'{tit_produto}')
+                                msg_dif('white', '', mensagem)
+
+                                return mensagem
+
+                    mensagem = (f'{info_an} Pode ser vendido por: R$ {novo_valor_atualizar}. Desconto atual: R$'
+                                f' {prc_prd} | {tit_produto}')
                     msg_dif('white', '', mensagem)
 
-                    modo_safe = False
+                    modo_safe = True
 
                     if modo_safe:
                         deseja_atualizar = input(str('Envie 1 se deseja alterar\n> '))
@@ -671,10 +689,16 @@ def main():
                             prc_prd = str(prc_prd)
                             prc_prd = prc_prd.replace('.', ',')
 
-                            mensagem = (f'{info_an} Desconto recriado: De R$ {prc_prd} por R$ {valor_imprimir} |'
-                                        f' {tit_produto}')
+                            mensagem = f'{info_an} Desconto recriado: De R$ {prc_prd} por R$ {valor_imprimir}'
+
+                            ret_planilha.append([vendedor, status, sku_produto, produto, tipo_envio, frete, canal,
+                                                 mensagem, tit_produto])
+
+                            # df_descontos = pd.DataFrame(ret_planilha, columns=[
+                            #     'Vendedor', 'Status', 'SKU', 'Produto', 'Envio', 'Frete', 'Canal', 'Ação', 'Título'])
+
                             msg_dif('green', '', mensagem)
-                            return mensagem
+                            return ret_planilha
 
                         else:
                             mensagem = f'{info_an} Não pôde ser alterado | {tit_produto}'
@@ -691,11 +715,16 @@ def main():
             # Caso o valor de preço original esteja vazio, podemos atualizar
             else:
 
-                if prc_prd >= 79:
-                    if novo_valor_atualizar < 79:
-                        mensagem = f'{info_an} Não alterar: Desconto abaixo do valor de frete grátis | {tit_produto}'
-                        msg_dif('white', '', mensagem)
-                        return mensagem
+                if not supermercado:
+                    if prc_prd < 79 and frete == 'Grátis':
+                        input('Produto com frete grátis abaixo de 79, por favor altere.\n'
+                              'Aperte ENTER para continuar')
+
+                    if prc_prd >= 79:
+                        if novo_valor_atualizar < 79:
+                            mensagem = f'{info_an} Não alterar: Desconto abaixo do valor de frete grátis | {tit_produto}'
+                            msg_dif('white', '', mensagem)
+                            return mensagem
 
                 datas_desconto = pegar_datas()
 
@@ -971,10 +1000,7 @@ def main():
 
             planilha_atualizar = dlg.askopenfilename(filetypes=[("Arquivos excel", ".xlsx")])
 
-            if planilha_atualizar == '':
-                msg_alerta('Você não selecionou nenhum arquivo')
-
-            else:
+            if planilha_atualizar != '':
                 print()
                 msg(f'Caminho do arquivo: {planilha_atualizar}')
                 df_atualizar = pd.read_excel(planilha_atualizar)
@@ -1131,6 +1157,8 @@ def main():
                             registro_nenhum_an = f'SKU: {sku_mlb} | Nenhum anúncio encontrado'
                             msg_alerta(registro_nenhum_an)
                             sku_nao_disp.append(sku_mlb)
+
+                            registro_nenhum_an = ''
                             lista_reg_zero = [registro_nenhum_an]
                             registros.append(lista_reg_zero)
 
@@ -1151,7 +1179,10 @@ def main():
                     msg_alerta('Opção inválida')
                     pass
 
-            msg('Digite SAIR para encerrar o backup')
+            else:
+                msg_alerta('Você não selecionou nenhum arquivo')
+
+            msg('Digite SAIR para encerrar o programa')
             msg(mensagem_base)
 
         elif escolha == '6':
@@ -1239,8 +1270,6 @@ def main():
 
             if token != '':
                 msg_destaque(f'Conta conectada: {nome_conta(token)}')
-
-                # print(f'{datetime.now()}')
 
             msg(mensagem_base)
 
