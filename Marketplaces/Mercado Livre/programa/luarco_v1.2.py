@@ -12,6 +12,7 @@ os.system('color')
 
 
 def main():
+
     os.system('CLS')
     apenas_itens_ativos = False
     base = 'https://api.mercadolibre.com'
@@ -495,9 +496,10 @@ def main():
             canal = 'Mercado Shops'
 
         else:
+            canal = 'Não especificado'
             pass
 
-        info_an = f'{vendedor} | {status} | {sku_produto} | {produto} | {tipo_envio} | {frete} | {canal} |'
+        # info_an = f'{vendedor} | {status} | {sku_produto} | {produto} | {tipo_envio} | {frete} | {canal}'
 
         if tipo == 'estoque':
             est_prd = info_prd['available_quantity']
@@ -507,15 +509,21 @@ def main():
 
             # Produtos do full não podem ser alterados
             if info_prd['shipping'] == 'Full':
-                mensagem = f'{info_an} Estoque no Full | {tit_produto}'
-                msg_dif('white', '', mensagem)
-                return mensagem
+                mensagem = f'Estoque no Full'
+                msg_imprimir = f'{produto} | {tipo_envio} | {frete} | {canal} | {mensagem} | {tit_produto}'
+                msg_dif('yellow', '', msg_imprimir)
+                lst_ret = [vendedor, status, sku_produto, produto, tipo_envio, frete, canal, mensagem, tit_produto]
+                # ret_planilha.append(lst_ret)
+                return lst_ret
 
             # Não vamos trocar um valor pelo mesmo valor, nós apenas deixamos como está
             if valor_atualizar == est_prd:
-                mensagem = f'{info_an} Estoque correto | {tit_produto}'
-                msg_dif('white', '', mensagem)
-                return mensagem
+                mensagem = f'Estoque correto'
+                msg_imprimir = f'{produto} | {tipo_envio} | {frete} | {canal} | {mensagem} | {tit_produto}'
+                msg_dif('white', '', msg_imprimir)
+                lst_ret = [vendedor, status, sku_produto, produto, tipo_envio, frete, canal, mensagem, tit_produto]
+                # ret_planilha.append(lst_ret)
+                return lst_ret
 
             # Podemos ter produtos com estoque, mas que estejam inativos, nesse caso, vamos tentar atualizar para ativo
             if valor_atualizar > 0:
@@ -527,14 +535,20 @@ def main():
             resposta = requests.put(url=url, headers=headers, data=payload)
 
             if resposta.status_code == 200:
-                mensagem = f'{info_an} Estoque alterado de {est_prd} para {valor_atualizar} | {tit_produto}'
-                msg_dif('green', '', mensagem)
-                return mensagem
+                mensagem = f'Estoque alterado de {est_prd} para {valor_atualizar}'
+                msg_imprimir = f'{produto} | {tipo_envio} | {frete} | {canal} | {mensagem} | {tit_produto}'
+                msg_dif('green', '', msg_imprimir)
+                lst_ret = [vendedor, status, sku_produto, produto, tipo_envio, frete, canal, mensagem, tit_produto]
+                # ret_planilha.append(lst_ret)
+                return lst_ret
 
             else:
-                mensagem = f'{info_an} Não pôde ser alterado | {tit_produto}'
-                msg_dif('red', '', mensagem)
-                return mensagem
+                mensagem = f'Não pôde ser alterado'
+                msg_imprimir = f'{produto} | {tipo_envio} | {frete} | {canal} | {mensagem} | {tit_produto}'
+                msg_dif('red', '', msg_imprimir)
+                lst_ret = [vendedor, status, sku_produto, produto, tipo_envio, frete, canal, mensagem, tit_produto]
+                # ret_planilha.append(lst_ret)
+                return lst_ret
 
         elif tipo == 'preço':
             prc_prd = info_prd['price']
@@ -543,7 +557,7 @@ def main():
 
             # Não vamos trocar um valor pelo mesmo valor, nós apenas deixamos como está
             if valor_atualizar == prc_prd:
-                mensagem = f'{info_an} Preço correto | {tit_produto}'
+                mensagem = f'Preço correto | {tit_produto}'
                 msg_dif('white', '', mensagem)
                 return mensagem
 
@@ -555,7 +569,7 @@ def main():
                 prc_org_prd = str(prc_org_prd)
                 prc_org_prd = prc_org_prd.replace('.', ',')
 
-                mensagem = f'{info_an} Desconto ativo: De R$ {prc_org_prd} por R$ {prc_prd} | {tit_produto}'
+                mensagem = f'Desconto ativo: De R$ {prc_org_prd} por R$ {prc_prd} | {tit_produto}'
                 msg_dif('white', '', mensagem)
                 return mensagem
 
@@ -573,12 +587,12 @@ def main():
                 prc_prd = str(prc_prd)
                 prc_prd = prc_prd.replace('.', ',')
 
-                mensagem = f'{info_an} Preço alterado de R$ {prc_prd} para R$ {valor_imprimir} | {tit_produto}'
+                mensagem = f'Preço alterado de R$ {prc_prd} para R$ {valor_imprimir} | {tit_produto}'
                 msg_dif('green', '', mensagem)
                 return mensagem
 
             else:
-                mensagem = f'{info_an} Não pôde ser alterado | {tit_produto}'
+                mensagem = f'Não pôde ser alterado | {tit_produto}'
                 msg_dif('red', '', mensagem)
                 return mensagem
 
@@ -589,12 +603,12 @@ def main():
             resposta = requests.put(url=url, headers=headers, data=payload)
 
             if resposta.status_code == 200:
-                mensagem = f'{info_an} SKU novo: {valor_atualizar} | {tit_produto}'
+                mensagem = f'SKU novo: {valor_atualizar} | {tit_produto}'
                 msg_dif('green', '', mensagem)
                 return mensagem
 
             else:
-                mensagem = f'{info_an} Não pôde ser alterado | {tit_produto}'
+                mensagem = f'Não pôde ser alterado | {tit_produto}'
                 msg_dif('red', '', mensagem)
                 return mensagem
 
@@ -618,9 +632,12 @@ def main():
             prc_org_prd = str(prc_org_prd)
 
             if status != 'Ativo':
-                mensagem = f'{info_an} Anúncio inativo | {tit_produto}'
-                msg_dif('red', '', mensagem)
-                return mensagem
+                mensagem = f'Anúncio inativo'
+                msg_imprimir = f'{produto} | {tipo_envio} | {frete} | {canal} | {mensagem} | {tit_produto}'
+                msg_dif('white', '', msg_imprimir)
+                lst_ret = [vendedor, status, sku_produto, produto, tipo_envio, frete, canal, mensagem, tit_produto]
+                # ret_planilha.append(lst_ret)
+                return lst_ret
 
             if prc_org_prd != 'None' and prc_org_prd != 'Null':
                 comp_prc = prc_prd
@@ -639,15 +656,18 @@ def main():
 
                         if comp_prc >= 79:
                             if novo_valor_atualizar < 79:
-                                mensagem = (f'{info_an} Não alterar: Desconto abaixo do valor de frete grátis | '
-                                            f'{tit_produto}')
-                                msg_dif('white', '', mensagem)
+                                mensagem = f'Não alterar: Desconto abaixo do valor de frete grátis'
+                                msg_imprimir = f'{produto} | {tipo_envio} | {frete} | {canal} | {mensagem} | {tit_produto}'
+                                msg_dif('white', '', msg_imprimir)
+                                lst_ret = [vendedor, status, sku_produto, produto, tipo_envio, frete, canal, mensagem,
+                                           tit_produto]
+                                # ret_planilha.append(lst_ret)
+                                return lst_ret
 
-                                return mensagem
-
-                    mensagem = (f'{info_an} Pode ser vendido por: R$ {novo_valor_atualizar}. Desconto atual: R$'
-                                f' {prc_prd} | {tit_produto}')
-                    msg_dif('white', '', mensagem)
+                    mensagem = (f'Pode ser vendido por: R$ {novo_valor_atualizar}. Desconto atual: R$'
+                                f' {prc_prd}')
+                    msg_imprimir = f'{produto} | {tipo_envio} | {frete} | {canal} | {mensagem} | {tit_produto}'
+                    msg_dif('white', '', msg_imprimir)
 
                     modo_safe = True
 
@@ -689,28 +709,36 @@ def main():
                             prc_prd = str(prc_prd)
                             prc_prd = prc_prd.replace('.', ',')
 
-                            mensagem = f'{info_an} Desconto recriado: De R$ {prc_prd} por R$ {valor_imprimir}'
-
-                            ret_planilha.append([vendedor, status, sku_produto, produto, tipo_envio, frete, canal,
-                                                 mensagem, tit_produto])
-
-                            # df_descontos = pd.DataFrame(ret_planilha, columns=[
-                            #     'Vendedor', 'Status', 'SKU', 'Produto', 'Envio', 'Frete', 'Canal', 'Ação', 'Título'])
-
-                            msg_dif('green', '', mensagem)
-                            return ret_planilha
+                            mensagem = f'Desconto recriado: De R$ {prc_prd} por R$ {valor_imprimir}'
+                            msg_imprimir = f'{produto} | {tipo_envio} | {frete} | {canal} | {mensagem} | {tit_produto}'
+                            msg_dif('green', '', msg_imprimir)
+                            lst_ret = [vendedor, status, sku_produto, produto, tipo_envio, frete, canal, mensagem,
+                                       tit_produto]
+                            # ret_planilha.append(lst_ret)
+                            return lst_ret
 
                         else:
-                            mensagem = f'{info_an} Não pôde ser alterado | {tit_produto}'
-                            msg_dif('red', '', mensagem)
-                            return mensagem
+                            mensagem = f'Não pôde ser alterado'
+                            msg_imprimir = f'{produto} | {tipo_envio} | {frete} | {canal} | {mensagem} | {tit_produto}'
+                            msg_dif('red', '', msg_imprimir)
+                            lst_ret = [vendedor, status, sku_produto, produto, tipo_envio, frete, canal, mensagem,
+                                       tit_produto]
+                            # ret_planilha.append(lst_ret)
+                            return lst_ret
+
                     else:
-                        return mensagem
+                        lst_ret = [vendedor, status, sku_produto, produto, tipo_envio, frete, canal, mensagem,
+                                   tit_produto]
+                        # ret_planilha.append(lst_ret)
+                        return lst_ret
 
                 else:
-                    mensagem = f'{info_an} Promoção ativa: De R$ {prc_org_prd} por R$ {prc_prd} | {tit_produto}'
-                msg_dif('white', '', mensagem)
-                return mensagem
+                    mensagem = f'Promoção ativa: De R$ {prc_org_prd} por R$ {prc_prd}'
+                    msg_imprimir = f'{produto} | {tipo_envio} | {frete} | {canal} | {mensagem} | {tit_produto}'
+                    msg_dif('white', '', msg_imprimir)
+                    lst_ret = [vendedor, status, sku_produto, produto, tipo_envio, frete, canal, mensagem, tit_produto]
+                    # ret_planilha.append(lst_ret)
+                    return lst_ret
 
             # Caso o valor de preço original esteja vazio, podemos atualizar
             else:
@@ -722,9 +750,13 @@ def main():
 
                     if prc_prd >= 79:
                         if novo_valor_atualizar < 79:
-                            mensagem = f'{info_an} Não alterar: Desconto abaixo do valor de frete grátis | {tit_produto}'
-                            msg_dif('white', '', mensagem)
-                            return mensagem
+                            mensagem = f'Não alterar: Desconto abaixo do valor de frete grátis'
+                            msg_imprimir = f'{produto} | {tipo_envio} | {frete} | {canal} | {mensagem} | {tit_produto}'
+                            msg_dif('white', '', msg_imprimir)
+                            lst_ret = [vendedor, status, sku_produto, produto, tipo_envio, frete, canal, mensagem,
+                                       tit_produto]
+                            # ret_planilha.append(lst_ret)
+                            return lst_ret
 
                 datas_desconto = pegar_datas()
 
@@ -750,15 +782,20 @@ def main():
                 prc_prd = str(prc_prd)
                 prc_prd = prc_prd.replace('.', ',')
 
-                mensagem = (f'{info_an} Desconto criado: De R$ {prc_prd} por R$ {valor_imprimir} |'
-                            f' {tit_produto}')
-                msg_dif('green', '', mensagem)
-                return mensagem
+                mensagem = f'Desconto criado: De R$ {prc_prd} por R$ {valor_imprimir}'
+                msg_imprimir = f'{produto} | {tipo_envio} | {frete} | {canal} | {mensagem} | {tit_produto}'
+                msg_dif('green', '', msg_imprimir)
+                lst_ret = [vendedor, status, sku_produto, produto, tipo_envio, frete, canal, mensagem, tit_produto]
+                # ret_planilha.append(lst_ret)
+                return lst_ret
 
             else:
-                mensagem = f'{info_an} Não pôde ser alterado | {tit_produto}'
-                msg_dif('red', '', mensagem)
-                return mensagem
+                mensagem = f'Não pôde ser alterado'
+                msg_imprimir = f'{produto} | {tipo_envio} | {frete} | {canal} | {mensagem} | {tit_produto}'
+                msg_dif('red', '', msg_imprimir)
+                lst_ret = [vendedor, status, sku_produto, produto, tipo_envio, frete, canal, mensagem, tit_produto]
+                # ret_planilha.append(lst_ret)
+                return lst_ret
 
 
     def pegar_produtos(sku, valor_atualizar, tv, tipo):
@@ -1145,6 +1182,7 @@ def main():
                                 valor_mlb = [valor_mlb, valor_desconto]
                                 registro_est = pegar_produtos(sku_mlb, est_mlb, token, 'estoque')
                                 registros.append(registro_est)
+                                time.sleep(1)
 
                             if planilha_des:
                                 valor_mlb = [valor_mlb, valor_desconto]
@@ -1168,9 +1206,23 @@ def main():
                     with open('registro.txt', 'w') as reg:
                         for item_reg in registros:
                             for item_reg_un in item_reg:
-                                print(item_reg_un)
                                 nova_linha = f'{item_reg_un}\n'
                                 reg.write(nova_linha)
+
+                    # registros_planilha = pd.DataFrame(registros)
+
+                    nova_lista = []
+
+                    for registro in registros:
+                        for registro_in in registro:
+                            nova_lista.append(registro_in)
+
+                    nova_planilha = pd.DataFrame(nova_lista,
+                                                 columns=['Vendedor', 'Status', 'SKU', 'Código', 'Envio', 'Frete',
+                                                          'Canal', 'Descrição', 'Título'])
+
+                    nova_planilha.to_excel(f'Registros-{nome_conta(token)}.xlsx', index=False)
+                    print(f'Arquivo gerado Registros.xlsx')
 
                 elif continuar == '2':
                     msg_alerta('Você escolheu não continuar')
