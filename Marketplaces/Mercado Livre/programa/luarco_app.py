@@ -9,859 +9,852 @@ from datetime import datetime, timezone, timedelta
 
 
 os.system('color')
+apenas_itens_ativos = False
+base = 'https://api.mercadolibre.com'
+
+mensagem_base = (
+    '\n[*] Escolha uma opção'
+    '\n[1] Trocar de conta'
+    '\n[2] Atualizar planilha'
+    '\n[3] Abrir a planilha'
+    '\n[4] Atualizar por SKU'
+    '\n[5] Atualizar por planilha'
+    '\n[6] Mais vendidos por categoria'
+    '\n')
 
 
-def main():
+def pegar_datas():
+    # Exemplo de pegar data que peguei da alura
+    # https://www.alura.com.br/artigos/lidando-com-datas-e-horarios-no-python
 
-    os.system('CLS')
-    apenas_itens_ativos = False
-    base = 'https://api.mercadolibre.com'
-    sair = False
+    datas = []
+
+    data_e_hora_atuais = datetime.now()
+    dif = timedelta(hours=-3)
+    fuso = timezone(dif)
+    data_e_hora_sao_paulo = data_e_hora_atuais.astimezone(fuso)
+
+    data_e_hora_atuais = data_e_hora_sao_paulo
+    pegar_minuto = data_e_hora_atuais.minute
+
+    if pegar_minuto == 59:
+        minuto = pegar_minuto
+    else:
+        minuto = pegar_minuto + 1
+
+    mes = data_e_hora_atuais.month + 1
+    data_alterada = data_e_hora_atuais.replace(minute=minuto)
+    data_futuro = data_e_hora_atuais.replace(month=mes)
+
+    data_alterada_texto = data_alterada.strftime('%Y-%m-%dT%H:%M:%S')
+    data_futuro_texto = data_futuro.strftime('%Y-%m-%dT%H:%M:%S')
+
+    datas.append(data_alterada_texto)
+    datas.append(data_futuro_texto)
+
+    return datas
 
 
-    def pegar_datas():
-        # Exemplo de pegar data que peguei da alura
-        # https://www.alura.com.br/artigos/lidando-com-datas-e-horarios-no-python
+def msg_dif(cor, lugar, mensagem):
+    linha = f'{'-' * (len(mensagem))}\n'
 
-        datas = []
+    texto = f'{mensagem}'
 
-        data_e_hora_atuais = datetime.now()
-        dif = timedelta(hours=-3)
-        fuso = timezone(dif)
-        data_e_hora_sao_paulo = data_e_hora_atuais.astimezone(fuso)
+    if lugar == 'cima':
+        print(colored(f'{linha}{texto}', cor))
 
-        data_e_hora_atuais = data_e_hora_sao_paulo
-        pegar_minuto = data_e_hora_atuais.minute
+    elif lugar == 'baixo':
+        print(colored(f'{texto}{linha}', cor))
 
-        if pegar_minuto == 59:
-            minuto = pegar_minuto
+    elif lugar == 'ambos':
+        print(colored(f'{linha}{texto}\n{linha}', cor))
+
+    else:
+        print(colored(f'{texto}', cor))
+
+
+def msg(mensagem):
+    msg_dif('white', '', f'{mensagem}')
+
+
+def msg_cima(mensagem):
+    msg_dif('white', 'cima', f'{mensagem}')
+
+
+def msg_aviso(mensagem):
+    msg_dif('yellow', '', f'{mensagem}')
+
+
+def msg_alerta(mensagem):
+    msg_dif('yellow', '', f'{mensagem}')
+
+
+def msg_destaque(mensagem):
+    msg_dif('green', 'ambos', f'{mensagem}')
+
+
+def fazer_reqs(url, tv):
+    headers = {'Authorization': f'Bearer {tv}'}
+    resposta = requests.get(f'{url}', headers=headers)
+
+    tentativa = 1
+    while tentativa < 12:
+        if resposta.status_code != 200:
+            if tentativa == 11:
+                msg_alerta('Número máximo de tentativas excedido')
+                quit()
+
+            else:
+                msg_aviso(f'Tentativa {tentativa} | Falha na requisição')
+                tentativa += 1
+                time.sleep(0.25)
+
         else:
-            minuto = pegar_minuto + 1
-
-        mes = data_e_hora_atuais.month + 1
-        data_alterada = data_e_hora_atuais.replace(minute=minuto)
-        data_futuro = data_e_hora_atuais.replace(month=mes)
-
-        data_alterada_texto = data_alterada.strftime('%Y-%m-%dT%H:%M:%S')
-        data_futuro_texto = data_futuro.strftime('%Y-%m-%dT%H:%M:%S')
-
-        datas.append(data_alterada_texto)
-        datas.append(data_futuro_texto)
-
-        return datas
+            resposta = resposta.json()
+            return resposta
 
 
-    def msg_dif(cor, lugar, mensagem):
+def configurar_conta():
+    conta_configurada = False
+    while not conta_configurada:
+        msg_cima('Insira o Access Token')
+        tv = input(str('> '))
 
-        linha = f'{'-' * (len(mensagem))}\n'
-
-        texto = f'{mensagem}'
-
-        if lugar == 'cima':
-            print(colored(f'{linha}{texto}', cor))
-
-        elif lugar == 'baixo':
-            print(colored(f'{texto}{linha}', cor))
-
-        elif lugar == 'ambos':
-            print(colored(f'{linha}{texto}\n{linha}', cor))
-
-        else:
-            print(colored(f'{texto}', cor))
-
-
-    def msg(mensagem):
-        msg_dif('white', '', f'{mensagem}')
-
-
-    def msg_cima(mensagem):
-        msg_dif('white', 'cima', f'{mensagem}')
-
-
-    def msg_aviso(mensagem):
-        msg_dif('yellow', '', f'{mensagem}')
-
-
-    def msg_alerta(mensagem):
-        msg_dif('yellow', '', f'{mensagem}')
-
-
-    def msg_destaque(mensagem):
-        msg_dif('green', 'ambos', f'{mensagem}')
-
-
-    def fazer_reqs(url, tv):
         headers = {'Authorization': f'Bearer {tv}'}
-        resposta = requests.get(f'{url}', headers=headers)
+        resposta = requests.get(f'{base}/users/me', headers=headers)
 
-        tentativa = 1
-        while tentativa < 12:
-            if resposta.status_code != 200:
-                if tentativa == 11:
-                    msg_alerta('Número máximo de tentativas excedido')
-                    quit()
+        if resposta.status_code == 200:
+            os.system('CLS')
+            msg_destaque('Programa feito por @imparcialista  v1.2.2')
+            msg(f'Conta conectada: {nome_conta(tv)}')
+            msg(mensagem_base)
+            return tv
 
-                else:
-                    msg_aviso(f'Tentativa {tentativa} | Falha na requisição')
-                    tentativa += 1
-                    time.sleep(0.25)
-
-            else:
-                resposta = resposta.json()
-                return resposta
-
-
-    def configurar_conta():
-        conta_configurada = False
-        while not conta_configurada:
-            msg_cima('Insira o Access Token')
-            tv = input(str('> '))
-
-            headers = {'Authorization': f'Bearer {tv}'}
-            resposta = requests.get(f'{base}/users/me', headers=headers)
-
-            if resposta.status_code == 200:
-                os.system('CLS')
-                return tv
-
-            else:
-                msg_aviso('Access Token inválido ou expirado')
-
-
-    def nome_conta(tv):
-        nome_retorno = fazer_reqs(f'{base}/users/me', tv)
-        conta = nome_retorno['nickname']
-        return conta
-
-
-    def id_conta(tv):
-        id_retorno = fazer_reqs(f'{base}/users/me', tv)
-        id_seller = id_retorno['id']
-        return id_seller
-
-
-    def pegar_scroll_id(tv):
-        url = f'{base}/users/{id_conta(tv)}/items/search?search_type=scan&limit=100'
-        resposta = fazer_reqs(url, tv)
-        return resposta
-
-
-    def proxima_pagina(scroll, tv):
-        url = f'{base}/users/{id_conta(tv)}/items/search?search_type=scan&scroll_id={scroll}&limit=100'
-        resposta = fazer_reqs(url, tv)
-        return resposta
-
-
-    def pegar_todos_ids(tv):
-        lista = []
-        inicio_timer = time.time()
-        paginas = 0
-
-        if apenas_itens_ativos:
-            filtro = 'include_filters=true&status=active'
         else:
-            filtro = ''
+            msg_aviso('Access Token inválido ou expirado')
 
-        url = f'{base}/users/{id_conta(tv)}/items/search?{filtro}&offset={0}'
-        resposta = fazer_reqs(url, tv)
 
+def nome_conta(tv):
+    nome_retorno = fazer_reqs(f'{base}/users/me', tv)
+    conta = nome_retorno['nickname']
+    return conta
+
+
+def id_conta(tv):
+    id_retorno = fazer_reqs(f'{base}/users/me', tv)
+    id_seller = id_retorno['id']
+    return id_seller
+
+
+def pegar_scroll_id(tv):
+    url = f'{base}/users/{id_conta(tv)}/items/search?search_type=scan&limit=100'
+    resposta = fazer_reqs(url, tv)
+    return resposta
+
+
+def proxima_pagina(scroll, tv):
+    url = f'{base}/users/{id_conta(tv)}/items/search?search_type=scan&scroll_id={scroll}&limit=100'
+    resposta = fazer_reqs(url, tv)
+    return resposta
+
+
+def pegar_todos_ids(tv):
+    lista = []
+    inicio_timer = time.time()
+    paginas = 0
+
+    if apenas_itens_ativos:
+        filtro = 'include_filters=true&status=active'
+    else:
+        filtro = ''
+
+    url = f'{base}/users/{id_conta(tv)}/items/search?{filtro}&offset={0}'
+    resposta = fazer_reqs(url, tv)
+
+    quantidade_de_an = resposta['paging']['total']
+
+    if quantidade_de_an == 0:
+        msg_cima('Nenhum anúncio ativo. Programa finalizado')
+        return
+
+    if quantidade_de_an > 1000:
+        msg_cima(f'Quantidade de anúncios: {quantidade_de_an}')
+
+        while quantidade_de_an > 0:
+            quantidade_de_an -= 100
+            paginas += 1
+
+        paginas = paginas - 1
+
+        lista_scroll = []
+        primeiro_scroll = pegar_scroll_id(tv)
+        msg_cima('Coletando IDs, por favor aguarde...')
+
+        lista_scroll.append(primeiro_scroll['scroll_id'])
+        for produto in primeiro_scroll['results']:
+            lista.append(produto)
+
+
+        def gerar_scroll(scroll_anterior):
+            scroll = proxima_pagina(scroll_anterior, tv)
+
+            for id_mlb in scroll['results']:
+                lista.append(id_mlb)
+
+            lista_scroll.append(scroll['scroll_id'])
+
+
+        for pagina in range(paginas):
+            gerar_scroll(lista_scroll[pagina])
+
+    else:
         quantidade_de_an = resposta['paging']['total']
 
-        if quantidade_de_an == 0:
-            msg_cima('Nenhum anúncio ativo. Programa finalizado')
-            return
+        msg_cima(f'Quantidade de anúncios: {quantidade_de_an}')
 
-        if quantidade_de_an > 1000:
-            msg_cima(f'Quantidade de anúncios: {quantidade_de_an}')
+        while quantidade_de_an > 0:
+            quantidade_de_an -= 50
+            paginas += 1
 
-            while quantidade_de_an > 0:
-                quantidade_de_an -= 100
-                paginas += 1
+        for pagina in range(paginas):
+            url = f'{base}/users/{id_conta(tv)}/items/search?{filtro}&offset={pagina * 50}'
 
-            paginas = paginas - 1
+            resposta = fazer_reqs(url, tv)
 
-            lista_scroll = []
-            primeiro_scroll = pegar_scroll_id(tv)
-            msg_cima('Coletando IDs, por favor aguarde...')
-
-            lista_scroll.append(primeiro_scroll['scroll_id'])
-            for produto in primeiro_scroll['results']:
+            for produto in resposta['results']:
                 lista.append(produto)
 
+    if not os.path.exists(f'Arquivos/{nome_conta(tv)}'):
+        os.makedirs(f'Arquivos/{nome_conta(tv)}')
+        msg_cima(f'Pasta {nome_conta(tv)} criada')
 
-            def gerar_scroll(scroll_anterior):
-                scroll = proxima_pagina(scroll_anterior, tv)
+    arquivo_json = f'Arquivos/{nome_conta(tv)}/{id_conta(tv)}-ids_mlb.json'
 
-                for id_mlb in scroll['results']:
-                    lista.append(id_mlb)
+    if os.path.exists(arquivo_json):
+        os.remove(arquivo_json)
 
-                lista_scroll.append(scroll['scroll_id'])
+    with open(arquivo_json, 'w') as outfile:
+        json.dump(lista, outfile)
+
+    fim_timer = time.time()
+    msg_cima(f'{nome_conta(tv)}: Todos os IDS foram coletados ')
+    msg_cima(f'Tempo de execução: {(int(fim_timer - inicio_timer)) + 1} segundos')
+
+    return lista
 
 
-            for pagina in range(paginas):
-                gerar_scroll(lista_scroll[pagina])
+def exportar_para_planilha(lista_json: list, colunas_drop: list, tv):
+    arquivo_json = (f'Arquivos/{(nome_conta(tv))}/{id_conta(tv)}'
+                    f'-retorno-produtos.json')
+
+    if os.path.exists(arquivo_json):
+        os.remove(arquivo_json)
+
+    with open(arquivo_json, 'w') as outfile:
+        json.dump(lista_json, outfile)
+
+    df = pd.read_json(arquivo_json)
+    df = df.drop(colunas_drop, axis=1, errors='ignore')
+    planilha = f'Arquivos/{nome_conta(tv)}/{id_conta(tv)}-planilha-produtos.xlsx'
+
+    if os.path.exists(planilha):
+        os.remove(planilha)
+
+    df['date_created'] = pd.to_datetime(df['date_created'], format='%d/%m/%Y %H:%M:%S')
+    df['last_updated'] = pd.to_datetime(df['last_updated'], format='%d/%m/%Y %H:%M:%S')
+
+    df = df.sort_values(by='last_updated', ascending=False)
+    df.to_excel(planilha, index=False)
+
+    msg(f'Planilha gerada')
+
+
+def gerar_planilha(tv):
+    ids_mlb = f'Arquivos/{nome_conta(tv)}/{id_conta(tv)}-ids_mlb.json'
+    lista_retorno = []
+    lista_geral = []
+    gap_vinte = 0
+    paginas = 0
+
+    if not os.path.exists(ids_mlb):
+        pegar_todos_ids(tv)
+
+    inicio_timer = time.time()
+
+    df = pd.read_json(ids_mlb)
+    quantidade_de_an = len(df)
+
+    msg_cima(f'Quantidade de anúncios: {quantidade_de_an}')
+
+    while quantidade_de_an > 0:
+        quantidade_de_an -= 20
+        paginas += 1
+
+    msg_cima(f'Páginas para percorrer: {paginas}')
+
+    for pagina in range(paginas):
+        inicio = gap_vinte
+        fim = gap_vinte + 20
+        itens = df[inicio:fim]
+        lista_concatenada = ','.join(itens[0])
+        lista_geral.append(lista_concatenada)
+        gap_vinte += 20
+
+    msg(f'Por favor aguarde...')
+
+    for i_pack, pack in enumerate(lista_geral):
+
+        url = f'{base}/items?ids={pack}'
+        retorno = fazer_reqs(url, tv)
+
+        for grupo_de_itens in retorno:
+            body = grupo_de_itens['body']
+
+            envio = body['shipping']['logistic_type']
+            if envio == 'cross_docking':
+                body['shipping'] = 'Normal'
+
+            elif envio == 'fulfillment':
+                body['shipping'] = 'Full'
+
+            elif envio == 'not_specified':
+                body['shipping'] = 'Não especificado'
+
+            else:
+                body['shipping'] = 'Não especificado'
+
+            atributos = body['attributes']
+
+            for atributo in atributos:
+                if atributo['id'] == 'SELLER_SKU':
+                    sku = atributo['values'][0]['name']
+                    body['attributes'] = sku
+                    break
+
+                else:
+                    body['attributes'] = ''
+
+            if body['status'] == 'active':
+                body['status'] = 'Ativo'
+
+            elif body['status'] == 'paused':
+                body['status'] = 'Pausado'
+
+            elif body['status'] == 'closed':
+                body['status'] = 'Fechado'
+
+            elif body['status'] == 'under_review':
+                body['status'] = 'Sob revisão'
+            else:
+                body['status'] = 'Outro'
+
+            criado = body['date_created']
+            atua = body['last_updated']
+
+            body['date_created'] = f'{criado[8:10]}/{criado[5:7]}/{criado[0:4]} {criado[11:19]}'
+            body['last_updated'] = f'{atua[8:10]}/{atua[5:7]}/{atua[0:4]} {atua[11:19]}'
+
+            porcentagem = body['health']
+
+            try:
+                float(porcentagem)
+                body['health'] = f'{(float(porcentagem)) * 100}%'
+
+            except:
+                body['health'] = ''
+
+            if body['catalog_listing'] == 'TRUE':
+                body['catalog_listing'] = 'Verdadeiro'
+            else:
+                body['catalog_listing'] = 'Falso'
+
+            if len(body['item_relations']) == 0:
+                body['item_relations'] = 'Sem relação'
+            else:
+                body['item_relations'] = body['item_relations'][0]['id']
+
+            if len(body['channels']) == 2:
+                body['channels'] = 'Vendido em ambos canais'
+
+            elif body['channels'][0] == 'marketplace':
+                body['channels'] = 'Vendido apenas no Mercado Livre'
+
+            elif body['channels'][0] == 'mshops':
+                body['channels'] = 'Vendido apenas no Mercado Shops'
+
+            else:
+                body['channels'] = 'Não especificado'
+
+            lista_retorno.append(body)
+
+    fim_timer = time.time()
+    msg(f'Informações coletadas. Tempo de execução: {(int(fim_timer - inicio_timer)) + 1} segundos')
+
+    drops = [
+        'site_id', 'official_store_id', 'user_product_id', 'seller_id', 'category_id', 'inventory_id',
+        'currency_id', 'sale_terms', 'buying_mode', 'listing_type_id', 'start_time', 'stop_time', 'end_time',
+        'expiration_time', 'thumbnail_id', 'pictures', 'video_id', 'descriptions', 'accepts_mercadopago',
+        'non_mercado_pago_payment_methods', 'international_delivery_mode', 'seller_address', 'seller_contact',
+        'location', 'geolocation', 'coverage_areas', 'warnings', 'listing_source', 'variations', 'sub_status',
+        'warranty', 'parent_item_id', 'differential_pricing', 'deal_ids', 'automatic_relist', 'start_time',
+        'stop_time', 'end_time', 'expiration_time', 'condition', 'seller_custom_field'
+        ]
+
+    exportar_para_planilha(lista_retorno, drops, tv)
+
+
+def atualizar(produto, valor_atualizar, tv, tipo):
+    url = f'{base}/items/{produto}'
+    info_prd = fazer_reqs(url, tv)
+    vendedor = nome_conta(tv)
+    tit_prd = info_prd['title']
+
+    # SKU
+    atributos = info_prd['attributes']
+    sku_prd = ''
+
+    for atributo in atributos:
+        if atributo['id'] == 'SELLER_SKU':
+            sku_prd = atributo['values'][0]['name']
+            break
+
+    # Envio
+    tipo_envio = info_prd['shipping']['logistic_type']
+    frete = info_prd['shipping']['free_shipping']
+
+    if frete:
+        frete = 'Grátis'
+    else:
+        frete = 'Pago'
+
+    if tipo_envio == 'cross_docking':
+        envio = 'Normal'
+
+    elif tipo_envio == 'fulfillment':
+        envio = 'Full'
+
+    elif tipo_envio == 'not_specified':
+        envio = 'Não especificado'
+
+    else:
+        envio = 'Não especificado'
+
+    # Status
+    if info_prd['status'] == 'active':
+        status = 'Ativo'
+
+    elif info_prd['status'] == 'paused':
+        status = 'Pausado'
+
+    elif info_prd['status'] == 'closed':
+        status = 'Fechado'
+
+    elif info_prd['status'] == 'under_review':
+        status = 'Sob revisão'
+    else:
+        status = 'Outro'
+
+    '''
+    # Datas
+    criado = info_prd['date_created']
+    atua = info_prd['last_updated']
+
+    criado_em = f'{criado[8:10]}/{criado[5:7]}/{criado[0:4]} {criado[11:19]}'
+    atualizado_em = f'{atua[8:10]}/{atua[5:7]}/{atua[0:4]} {atua[11:19]}'
+
+    # Saúde
+    porcentagem = info_prd['health']
+    vida_prd = ''
+
+    try:
+        float(porcentagem)
+        vida_prd = f'{(float(porcentagem)) * 100}%'
+
+    except:
+        pass
+
+
+    # Produto de catálogo
+    tipo_de_an = ''
+
+    if info_prd['catalog_listing'] == 'TRUE':
+        tipo_de_an = 'Catálogo'    # Sim
+    else:
+        tipo_de_an = 'Produto'     # Não
+
+    # Produto relacionado
+    prd_relacionado = ''
+
+    if len(info_prd['item_relations']) == 0:
+        prd_relacionado = 'Sem relação'                          # Não
+    else:
+        prd_relacionado = info_prd['item_relations'][0]['id']    # Sim
+    '''
+
+    # Canal de venda
+    if len(info_prd['channels']) == 2:
+        canal = 'Ambos'
+
+    elif info_prd['channels'][0] == 'marketplace':
+        canal = 'Mercado Livre'
+
+    elif info_prd['channels'][0] == 'mshops':
+        canal = 'Mercado Shops'
+
+    else:
+        canal = 'Não especificado'
+
+    msg_base = f'{status} | {produto} | {envio} | {frete} | {canal}'
+    linha_ret = [vendedor, status, sku_prd, produto, envio, frete, canal, tit_prd]
+
+    if tipo == 'estoque':
+        est_prd = info_prd['available_quantity']
+        if valor_atualizar <= 0:
+            valor_atualizar = 0
+
+        # Produtos do full não podem ser alterados
+        if info_prd['shipping'] == 'Full':
+            mensagem = f'Estoque no Full'
+            msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
+            msg_dif('yellow', '', msg_imp)
+            linha_ret.append(mensagem)
+            return linha_ret
+
+        # Não vamos trocar um valor pelo mesmo valor, nós apenas deixamos como está
+        if valor_atualizar == est_prd:
+            mensagem = f'Estoque correto'
+            msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
+            msg_dif('white', '', msg_imp)
+            linha_ret.append(mensagem)
+            return linha_ret
+
+        # Podemos ter produtos com estoque, mas que estejam inativos, nesse caso, vamos tentar atualizar para ativo
+        if valor_atualizar > 0:
+            payload = json.dumps({'available_quantity': valor_atualizar, 'status': 'active'})
+        else:
+            payload = json.dumps({'available_quantity': valor_atualizar})
+
+        headers = {'Authorization': f'Bearer {tv}'}
+        resposta = requests.put(url=url, headers=headers, data=payload)
+
+        if resposta.status_code == 200:
+            mensagem = f'Estoque alterado de {est_prd} para {valor_atualizar}'
+            msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
+            msg_dif('green', '', msg_imp)
+            linha_ret.append(mensagem)
+            return linha_ret
 
         else:
-            quantidade_de_an = resposta['paging']['total']
+            mensagem = f'Não pôde ser alterado'
+            msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
+            msg_dif('red', '', msg_imp)
+            linha_ret.append(mensagem)
+            return linha_ret
 
-            msg_cima(f'Quantidade de anúncios: {quantidade_de_an}')
+    elif tipo == 'preço':
+        prc_prd = info_prd['price']
+        prc_org_prd = info_prd['original_price']
+        prc_org_prd = str(prc_org_prd)
+
+        # Não vamos trocar um valor pelo mesmo valor, nós apenas deixamos como está
+        if valor_atualizar == prc_prd:
+            mensagem = f'Preço correto | {tit_prd}'
+            msg_dif('white', '', mensagem)
+            return mensagem
+
+        # Caso contrário, vamos informar o desconto que está ativo e não atualizar
+        if prc_org_prd != 'None' and prc_org_prd != 'Null':
+            prc_prd = str(prc_prd)
+            prc_prd = prc_prd.replace('.', ',')
+
+            prc_org_prd = str(prc_org_prd)
+            prc_org_prd = prc_org_prd.replace('.', ',')
+
+            mensagem = f'Desconto ativo: De R$ {prc_org_prd} por R$ {prc_prd} | {tit_prd}'
+            msg_dif('white', '', mensagem)
+            return mensagem
+
+        # Caso o valor de preço original esteja vazio, podemos atualizar
+        else:
+            payload = json.dumps({'price': valor_atualizar})
+
+        headers = {'Authorization': f'Bearer {tv}'}
+        resposta = requests.put(url=url, headers=headers, data=payload)
+
+        if resposta.status_code == 200:
+            valor_atualizar_imp = str(valor_atualizar)
+            valor_imp = valor_atualizar_imp.replace('.', ',')
+
+            prc_prd = str(prc_prd)
+            prc_prd = prc_prd.replace('.', ',')
+
+            mensagem = f'Preço alterado de R$ {prc_prd} para R$ {valor_imp} | {tit_prd}'
+            msg_dif('green', '', mensagem)
+            return mensagem
+
+        else:
+            mensagem = f'Não pôde ser alterado | {tit_prd}'
+            msg_dif('red', '', mensagem)
+            return mensagem
+
+    elif tipo == 'sku':
+        payload = json.dumps({'attributes': [{'id': 'SELLER_SKU', 'value_name': f'{valor_atualizar}'}]})
+
+        headers = {'Authorization': f'Bearer {tv}'}
+        resposta = requests.put(url=url, headers=headers, data=payload)
+
+        if resposta.status_code == 200:
+            mensagem = f'SKU novo: {valor_atualizar} | {tit_prd}'
+            msg_dif('green', '', mensagem)
+            return mensagem
+
+        else:
+            mensagem = f'Não pôde ser alterado | {tit_prd}'
+            msg_dif('red', '', mensagem)
+            return mensagem
+
+    elif tipo == 'desconto':
+        supermercado = False
+        if type(valor_atualizar) is list:
+            valor_mercado_livre = valor_atualizar[0]
+            valor_supermercado = valor_atualizar[1]
+
+            if 'supermarket_eligible' in info_prd['tags']:
+                novo_valor = valor_supermercado
+                supermercado = True
+            else:
+                supermercado = False
+                novo_valor = valor_mercado_livre
+        else:
+            novo_valor = valor_atualizar
+
+        prc_prd = info_prd['price']
+        prc_org_prd = info_prd['original_price']
+        prc_org_prd = str(prc_org_prd)
+
+        if status != 'Ativo':
+            mensagem = f'Anúncio inativo'
+            msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
+            msg_dif('white', '', msg_imp)
+            linha_ret.append(mensagem)
+            return linha_ret
+
+        if prc_org_prd != 'None' and prc_org_prd != 'Null':
+            comp_prc = prc_prd
+            prc_prd = str(prc_prd)
+
+            prc_prd = prc_prd.replace('.', ',')
+
+            prc_org_prd = str(prc_org_prd)
+            prc_org_prd = prc_org_prd.replace('.', ',')
+
+            if float(novo_valor) < comp_prc:
+                if not supermercado:
+                    if comp_prc < 79 and frete == 'Grátis':
+                        input(
+                            'Produto com frete grátis abaixo de 79, por favor altere. Aperte ENTER para '
+                            'continuar')
+
+                    if comp_prc >= 79:
+                        if novo_valor < 79:
+                            mensagem = f'Não alterar: Desconto abaixo do valor de frete grátis'
+                            msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
+                            msg_dif('white', '', msg_imp)
+                            linha_ret.append(mensagem)
+                            return linha_ret
+
+                mensagem = f'Pode ser vendido por: R$ {novo_valor}. Desconto atual: R$ {prc_prd}'
+                msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
+                msg_dif('white', '', msg_imp)
+
+                modo_safe = True
+
+                if modo_safe:
+                    deseja_atualizar = input(str('Envie 1 se deseja alterar\n> '))
+                else:
+                    deseja_atualizar = '1'
+
+                if deseja_atualizar == '1':
+                    url = f'{base}/seller-promotions/items/{produto}?promotion_type=PRICE_DISCOUNT&app_version=v2'
+                    headers = {'Authorization': f'Bearer {tv}'}
+                    requests.request('DELETE', url=url, headers=headers)
+                    msg_dif('yellow', '', 'Recriando promoção, por favor aguarde...')
+                    time.sleep(15)
+
+                    datas_desconto = pegar_datas()
+
+                    dt_desconto = datas_desconto[0]
+                    dt_futuro = datas_desconto[1]
+
+                    payload = json.dumps(
+                            {
+                                'deal_price'    : float(novo_valor),
+                                'start_date'    : dt_desconto,
+                                'finish_date'   : dt_futuro,
+                                'promotion_type': 'PRICE_DISCOUNT'
+                                })
+
+                    url = f'{base}/seller-promotions/items/{produto}?app_version=v2'
+
+                    headers = {'Authorization': f'Bearer {tv}'}
+                    resposta = requests.request('POST', url=url, headers=headers, data=payload)
+
+                    if resposta.status_code == 201:
+                        valor_atualizar_imp = str(novo_valor)
+                        valor_imp = valor_atualizar_imp.replace('.', ',')
+
+                        prc_prd = str(prc_prd)
+                        prc_prd = prc_prd.replace('.', ',')
+
+                        mensagem = f'Desconto recriado: De R$ {prc_prd} por R$ {valor_imp}'
+                        msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
+                        msg_dif('green', '', msg_imp)
+                        linha_ret.append(mensagem)
+                        return linha_ret
+
+                    else:
+                        mensagem = f'Não pôde ser alterado'
+                        msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
+                        msg_dif('red', '', msg_imp)
+                        linha_ret.append(mensagem)
+
+                        return linha_ret
+
+                else:
+                    linha_ret.append(mensagem)
+                    return linha_ret
+
+            else:
+                mensagem = f'Promoção ativa: De R$ {prc_org_prd} por R$ {prc_prd}'
+                msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
+                msg_dif('white', '', msg_imp)
+                linha_ret.append(mensagem)
+                return linha_ret
+
+        else:
+
+            if not supermercado:
+                if prc_prd < 79 and frete == 'Grátis':
+                    input('Produto com frete grátis abaixo de 79, por favor altere.\nAperte ENTER para continuar')
+
+                if prc_prd >= 79:
+                    if novo_valor < 79:
+                        mensagem = f'Não alterar: Desconto abaixo do valor de frete grátis'
+                        msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
+                        msg_dif('white', '', msg_imp)
+                        linha_ret.append(mensagem)
+                        return linha_ret
+
+            datas_desconto = pegar_datas()
+
+            dt_desconto = datas_desconto[0]
+            dt_futuro = datas_desconto[1]
+
+            payload = json.dumps(
+                    {
+                        'deal_price'    : float(novo_valor),
+                        'start_date'    : dt_desconto,
+                        'finish_date'   : dt_futuro,
+                        'promotion_type': 'PRICE_DISCOUNT'
+                        })
+
+        url = f'{base}/seller-promotions/items/{produto}?app_version=v2'
+
+        headers = {'Authorization': f'Bearer {tv}'}
+        resposta = requests.request('POST', url=url, headers=headers, data=payload)
+
+        if resposta.status_code == 201:
+            valor_atualizar_imp = str(novo_valor)
+            valor_imp = valor_atualizar_imp.replace('.', ',')
+
+            prc_prd = str(prc_prd)
+            prc_prd = prc_prd.replace('.', ',')
+
+            mensagem = f'Desconto criado: De R$ {prc_prd} por R$ {valor_imp}'
+            msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
+            msg_dif('green', '', msg_imp)
+            linha_ret.append(mensagem)
+            return linha_ret
+
+        else:
+            mensagem = f'Não pôde ser alterado'
+            msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
+            msg_dif('red', '', msg_imp)
+            linha_ret.append(mensagem)
+            return linha_ret
+
+
+def pegar_produtos(sku, valor_atualizar, tv, tipo):
+    lista_feitos = []
+    paginas = 0
+    url = f'{base}/users/{id_conta(tv)}/items/search?seller_sku={sku}&offset={paginas}'
+
+    resposta = fazer_reqs(url, tv)
+    quantidade_de_an = resposta['paging']['total']
+
+    if quantidade_de_an == 0:
+        mensagem = 'Nenhum anúncio encontrado'
+        msg_dif('red', '', mensagem)
+        lista_qtd_zero = [mensagem]
+        lista_feitos.append(lista_qtd_zero)
+        return lista_feitos
+
+    else:
+        if quantidade_de_an <= 50:
+            for produto in resposta['results']:
+                feito = atualizar(produto, valor_atualizar, tv, tipo)
+                lista_feitos.append(feito)
+
+        else:
 
             while quantidade_de_an > 0:
                 quantidade_de_an -= 50
                 paginas += 1
 
             for pagina in range(paginas):
-                url = f'{base}/users/{id_conta(tv)}/items/search?{filtro}&offset={pagina * 50}'
+                url = f'{base}/users/{id_conta(tv)}/items/search?seller_sku={sku}&offset={(pagina * 50)}'
 
                 resposta = fazer_reqs(url, tv)
 
                 for produto in resposta['results']:
-                    lista.append(produto)
-
-        if not os.path.exists(f'Arquivos/{nome_conta(token)}'):
-            os.makedirs(f'Arquivos/{nome_conta(token)}')
-            msg_cima(f'Pasta {nome_conta(token)} criada')
-
-        arquivo_json = f'Arquivos/{nome_conta(token)}/{id_conta(tv)}-ids_mlb.json'
-
-        if os.path.exists(arquivo_json):
-            os.remove(arquivo_json)
-
-        with open(arquivo_json, 'w') as outfile:
-            json.dump(lista, outfile)
-
-        fim_timer = time.time()
-        msg_cima(f'{nome_conta(token)}: Todos os IDS foram coletados ')
-        msg_cima(f'Tempo de execução: {(int(fim_timer - inicio_timer)) + 1} segundos')
-
-        return lista
-
-
-    def exportar_para_planilha(lista_json: list, colunas_drop: list, tv):
-        arquivo_json = (f'Arquivos/{(nome_conta(tv))}/{id_conta(tv)}'
-                        f'-retorno-produtos.json')
-
-        if os.path.exists(arquivo_json):
-            os.remove(arquivo_json)
-
-        with open(arquivo_json, 'w') as outfile:
-            json.dump(lista_json, outfile)
-
-        df = pd.read_json(arquivo_json)
-        df = df.drop(colunas_drop, axis=1, errors='ignore')
-        planilha = (f'Arquivos/{nome_conta(tv)}/'
-                    f'{id_conta(tv)}-planilha-produtos.xlsx')
-
-        if os.path.exists(planilha):
-            os.remove(planilha)
-
-        df['date_created'] = pd.to_datetime(df['date_created'], format='%d/%m/%Y %H:%M:%S')
-        df['last_updated'] = pd.to_datetime(df['last_updated'], format='%d/%m/%Y %H:%M:%S')
-
-        df = df.sort_values(by='last_updated', ascending=False)
-        df.to_excel(planilha, index=False)
-
-        msg(f'Planilha gerada')
-
-
-    def gerar_planilha(tv):
-        ids_mlb = f'Arquivos/{nome_conta(tv)}/{id_conta(tv)}-ids_mlb.json'
-        lista_retorno = []
-        lista_geral = []
-        gap_vinte = 0
-        paginas = 0
-
-        if not os.path.exists(ids_mlb):
-            pegar_todos_ids(tv)
-
-        inicio_timer = time.time()
-
-        df = pd.read_json(ids_mlb)
-        quantidade_de_an = len(df)
-
-        msg_cima(f'Quantidade de anúncios: {quantidade_de_an}')
-
-        while quantidade_de_an > 0:
-            quantidade_de_an -= 20
-            paginas += 1
-
-        msg_cima(f'Páginas para percorrer: {paginas}')
-
-        for pagina in range(paginas):
-            inicio = gap_vinte
-            fim = gap_vinte + 20
-            itens = df[inicio:fim]
-            lista_concatenada = ','.join(itens[0])
-            lista_geral.append(lista_concatenada)
-            gap_vinte += 20
-
-        msg(f'Por favor aguarde...')
-
-        for i_pack, pack in enumerate(lista_geral):
-
-            url = f'{base}/items?ids={pack}'
-            retorno = fazer_reqs(url, tv)
-
-            for grupo_de_itens in retorno:
-                body = grupo_de_itens['body']
-
-                envio = body['shipping']['logistic_type']
-                if envio == 'cross_docking':
-                    body['shipping'] = 'Normal'
-
-                elif envio == 'fulfillment':
-                    body['shipping'] = 'Full'
-
-                elif envio == 'not_specified':
-                    body['shipping'] = 'Não especificado'
-
-                else:
-                    body['shipping'] = 'Não especificado'
-
-                atributos = body['attributes']
-
-                for atributo in atributos:
-                    if atributo['id'] == 'SELLER_SKU':
-                        sku = atributo['values'][0]['name']
-                        body['attributes'] = sku
-                        break
-
-                    else:
-                        body['attributes'] = ''
-
-                if body['status'] == 'active':
-                    body['status'] = 'Ativo'
-
-                elif body['status'] == 'paused':
-                    body['status'] = 'Pausado'
-
-                elif body['status'] == 'closed':
-                    body['status'] = 'Fechado'
-
-                elif body['status'] == 'under_review':
-                    body['status'] = 'Sob revisão'
-                else:
-                    body['status'] = 'Outro'
-
-                criado = body['date_created']
-                atua = body['last_updated']
-
-                body['date_created'] = f'{criado[8:10]}/{criado[5:7]}/{criado[0:4]} {criado[11:19]}'
-                body['last_updated'] = f'{atua[8:10]}/{atua[5:7]}/{atua[0:4]} {atua[11:19]}'
-
-                porcentagem = body['health']
-
-                try:
-                    float(porcentagem)
-                    body['health'] = f'{(float(porcentagem)) * 100}%'
-
-                except:
-                    body['health'] = ''
-
-                if body['catalog_listing'] == 'TRUE':
-                    body['catalog_listing'] = 'Verdadeiro'
-                else:
-                    body['catalog_listing'] = 'Falso'
-
-                if len(body['item_relations']) == 0:
-                    body['item_relations'] = 'Sem relação'
-                else:
-                    body['item_relations'] = body['item_relations'][0]['id']
-
-                if len(body['channels']) == 2:
-                    body['channels'] = 'Vendido em ambos canais'
-
-                elif body['channels'][0] == 'marketplace':
-                    body['channels'] = 'Vendido apenas no Mercado Livre'
-
-                elif body['channels'][0] == 'mshops':
-                    body['channels'] = 'Vendido apenas no Mercado Shops'
-
-                else:
-                    body['channels'] = 'Não especificado'
-
-                lista_retorno.append(body)
-
-        fim_timer = time.time()
-        msg(f'Informações coletadas. Tempo de execução: {(int(fim_timer - inicio_timer)) + 1} segundos')
-
-        drops = [
-            'site_id', 'official_store_id', 'user_product_id', 'seller_id', 'category_id', 'inventory_id',
-            'currency_id', 'sale_terms', 'buying_mode', 'listing_type_id', 'start_time', 'stop_time', 'end_time',
-            'expiration_time', 'thumbnail_id', 'pictures', 'video_id', 'descriptions', 'accepts_mercadopago',
-            'non_mercado_pago_payment_methods', 'international_delivery_mode', 'seller_address', 'seller_contact',
-            'location', 'geolocation', 'coverage_areas', 'warnings', 'listing_source', 'variations', 'sub_status',
-            'warranty', 'parent_item_id', 'differential_pricing', 'deal_ids', 'automatic_relist', 'start_time',
-            'stop_time', 'end_time', 'expiration_time', 'condition', 'seller_custom_field'
-            ]
-
-        exportar_para_planilha(lista_retorno, drops, tv)
-
-    def atualizar(produto, valor_atualizar, tv, tipo):
-        url = f'{base}/items/{produto}'
-        info_prd = fazer_reqs(url, tv)
-        vendedor = nome_conta(tv)
-        tit_prd = info_prd['title']
-
-        ret_planilha = []
-
-        # SKU
-        atributos = info_prd['attributes']
-        sku_prd = ''
-
-        for atributo in atributos:
-            if atributo['id'] == 'SELLER_SKU':
-                sku_prd = atributo['values'][0]['name']
-                break
-
-        # Envio
-        envio = info_prd['shipping']['logistic_type']
-        frete = info_prd['shipping']['free_shipping']
-
-        if frete:
-            frete = 'Grátis'
-        else:
-            frete = 'Pago'
-
-        if envio == 'cross_docking':
-            tipo_envio = 'Normal'
-
-        elif envio == 'fulfillment':
-            tipo_envio = 'Full'
-
-        elif envio == 'not_specified':
-            tipo_envio = 'Não especificado'
-
-        else:
-            tipo_envio = 'Não especificado'
-
-        # Status
-        if info_prd['status'] == 'active':
-            status = 'Ativo'
-
-        elif info_prd['status'] == 'paused':
-            status = 'Pausado'
-
-        elif info_prd['status'] == 'closed':
-            status = 'Fechado'
-
-        elif info_prd['status'] == 'under_review':
-            status = 'Sob revisão'
-        else:
-            status = 'Outro'
-
-        '''
-        # Datas
-        criado = info_prd['date_created']
-        atua = info_prd['last_updated']
-
-        criado_em = f'{criado[8:10]}/{criado[5:7]}/{criado[0:4]} {criado[11:19]}'
-        atualizado_em = f'{atua[8:10]}/{atua[5:7]}/{atua[0:4]} {atua[11:19]}'
-        
-        # Saúde
-        porcentagem = info_prd['health']
-        vida_prd = ''
-        
-        try:
-            float(porcentagem)
-            vida_prd = f'{(float(porcentagem)) * 100}%'
-
-        except:
-            pass
-        
-
-        # Produto de catálogo
-        tipo_de_an = ''
-
-        if info_prd['catalog_listing'] == 'TRUE':
-            tipo_de_an = 'Catálogo'    # Sim
-        else:
-            tipo_de_an = 'Produto'     # Não
-
-        # Produto relacionado
-        prd_relacionado = ''
-
-        if len(info_prd['item_relations']) == 0:
-            prd_relacionado = 'Sem relação'                          # Não
-        else:
-            prd_relacionado = info_prd['item_relations'][0]['id']    # Sim
-        '''
-
-        # Canal de venda
-        if len(info_prd['channels']) == 2:
-            canal = 'Ambos'
-
-        elif info_prd['channels'][0] == 'marketplace':
-            canal = 'Mercado Livre'
-
-        elif info_prd['channels'][0] == 'mshops':
-            canal = 'Mercado Shops'
-
-        else:
-            canal = 'Não especificado'
-
-        msg_base = f'{status} | {produto} | {tipo_envio} | {frete} | {canal}'
-        retorno_linha = [vendedor, status, sku_prd, produto, tipo_envio, frete, canal, tit_prd]
-
-        if tipo == 'estoque':
-            est_prd = info_prd['available_quantity']
-            if valor_atualizar <= 0:
-                valor_atualizar = 0
-
-            # Produtos do full não podem ser alterados
-            if info_prd['shipping'] == 'Full':
-                mensagem = f'Estoque no Full'
-                msg_imprimir = f'{msg_base} | {mensagem} | {tit_prd}'
-                msg_dif('yellow', '', msg_imprimir)
-                retorno_linha.append(mensagem)
-                return retorno_linha
-
-            # Não vamos trocar um valor pelo mesmo valor, nós apenas deixamos como está
-            if valor_atualizar == est_prd:
-                mensagem = f'Estoque correto'
-                msg_imprimir = f'{msg_base} | {mensagem} | {tit_prd}'
-                msg_dif('white', '', msg_imprimir)
-                retorno_linha.append(mensagem)
-                return retorno_linha
-
-            # Podemos ter produtos com estoque, mas que estejam inativos, nesse caso, vamos tentar atualizar para ativo
-            if valor_atualizar > 0:
-                payload = json.dumps({'available_quantity': valor_atualizar, 'status': 'active'})
-            else:
-                payload = json.dumps({'available_quantity': valor_atualizar})
-
-            headers = {'Authorization': f'Bearer {tv}'}
-            resposta = requests.put(url=url, headers=headers, data=payload)
-
-            if resposta.status_code == 200:
-                mensagem = f'Estoque alterado de {est_prd} para {valor_atualizar}'
-                msg_imprimir = f'{msg_base} | {mensagem} | {tit_prd}'
-                msg_dif('green', '', msg_imprimir)
-                retorno_linha.append(mensagem)
-                return retorno_linha
-
-            else:
-                mensagem = f'Não pôde ser alterado'
-                msg_imprimir = f'{msg_base} | {mensagem} | {tit_prd}'
-                msg_dif('red', '', msg_imprimir)
-                retorno_linha.append(mensagem)
-                return retorno_linha
-
-        elif tipo == 'preço':
-            prc_prd = info_prd['price']
-            prc_org_prd = info_prd['original_price']
-            prc_org_prd = str(prc_org_prd)
-
-            # Não vamos trocar um valor pelo mesmo valor, nós apenas deixamos como está
-            if valor_atualizar == prc_prd:
-                mensagem = f'Preço correto | {tit_prd}'
-                msg_dif('white', '', mensagem)
-                return mensagem
-
-            # Caso contrário, vamos informar o desconto que está ativo e não atualizar
-            if prc_org_prd != 'None' and prc_org_prd != 'Null':
-                prc_prd = str(prc_prd)
-                prc_prd = prc_prd.replace('.', ',')
-
-                prc_org_prd = str(prc_org_prd)
-                prc_org_prd = prc_org_prd.replace('.', ',')
-
-                mensagem = f'Desconto ativo: De R$ {prc_org_prd} por R$ {prc_prd} | {tit_prd}'
-                msg_dif('white', '', mensagem)
-                return mensagem
-
-            # Caso o valor de preço original esteja vazio, podemos atualizar
-            else:
-                payload = json.dumps({'price': valor_atualizar})
-
-            headers = {'Authorization': f'Bearer {tv}'}
-            resposta = requests.put(url=url, headers=headers, data=payload)
-
-            if resposta.status_code == 200:
-                valor_atualizar_imprimir = str(valor_atualizar)
-                valor_imprimir = valor_atualizar_imprimir.replace('.', ',')
-
-                prc_prd = str(prc_prd)
-                prc_prd = prc_prd.replace('.', ',')
-
-                mensagem = f'Preço alterado de R$ {prc_prd} para R$ {valor_imprimir} | {tit_prd}'
-                msg_dif('green', '', mensagem)
-                return mensagem
-
-            else:
-                mensagem = f'Não pôde ser alterado | {tit_prd}'
-                msg_dif('red', '', mensagem)
-                return mensagem
-
-        elif tipo == 'sku':
-            payload = json.dumps({'attributes': [{'id': 'SELLER_SKU', 'value_name': f'{valor_atualizar}'}]})
-
-            headers = {'Authorization': f'Bearer {tv}'}
-            resposta = requests.put(url=url, headers=headers, data=payload)
-
-            if resposta.status_code == 200:
-                mensagem = f'SKU novo: {valor_atualizar} | {tit_prd}'
-                msg_dif('green', '', mensagem)
-                return mensagem
-
-            else:
-                mensagem = f'Não pôde ser alterado | {tit_prd}'
-                msg_dif('red', '', mensagem)
-                return mensagem
-
-        elif tipo == 'desconto':
-            supermercado = False
-            if type(valor_atualizar) is list:
-                valor_mercado_livre = valor_atualizar[0]
-                valor_supermercado = valor_atualizar[1]
-
-                if 'supermarket_eligible' in info_prd['tags']:
-                    novo_valor = valor_supermercado
-                    supermercado = True
-                else:
-                    supermercado = False
-                    novo_valor = valor_mercado_livre
-            else:
-                novo_valor = valor_atualizar
-
-            prc_prd = info_prd['price']
-            prc_org_prd = info_prd['original_price']
-            prc_org_prd = str(prc_org_prd)
-
-            if status != 'Ativo':
-                mensagem = f'Anúncio inativo'
-                msg_imprimir = f'{msg_base} | {mensagem} | {tit_prd}'
-                msg_dif('white', '', msg_imprimir)
-                retorno_linha.append(mensagem)
-                return retorno_linha
-
-            if prc_org_prd != 'None' and prc_org_prd != 'Null':
-                comp_prc = prc_prd
-                prc_prd = str(prc_prd)
-
-                prc_prd = prc_prd.replace('.', ',')
-
-                prc_org_prd = str(prc_org_prd)
-                prc_org_prd = prc_org_prd.replace('.', ',')
-
-                if float(novo_valor) < comp_prc:
-                    if not supermercado:
-                        if comp_prc < 79 and frete == 'Grátis':
-                            input('Produto com frete grátis abaixo de 79, por favor altere. Aperte ENTER para '
-                                  'continuar')
-
-                        if comp_prc >= 79:
-                            if novo_valor < 79:
-                                mensagem = f'Não alterar: Desconto abaixo do valor de frete grátis'
-                                msg_imprimir = f'{msg_base} | {mensagem} | {tit_prd}'
-                                msg_dif('white', '', msg_imprimir)
-                                retorno_linha = [vendedor, status, sku_prd, produto, tipo_envio, frete, canal, mensagem,
-                                           tit_prd]
-                                return retorno_linha
-
-                    mensagem = f'Pode ser vendido por: R$ {novo_valor}. Desconto atual: R$ {prc_prd}'
-                    msg_imprimir = f'{msg_base} | {mensagem} | {tit_prd}'
-                    msg_dif('white', '', msg_imprimir)
-
-                    modo_safe = True
-
-                    if modo_safe:
-                        deseja_atualizar = input(str('Envie 1 se deseja alterar\n> '))
-                    else:
-                        deseja_atualizar = '1'
-
-                    if deseja_atualizar == '1':
-                        url = f'{base}/seller-promotions/items/{produto}?promotion_type=PRICE_DISCOUNT&app_version=v2'
-                        headers = {'Authorization': f'Bearer {tv}'}
-                        requests.request('DELETE', url=url, headers=headers)
-                        msg_dif('yellow', '', 'Recriando promoção, por favor aguarde...')
-                        time.sleep(15)
-
-                        datas_desconto = pegar_datas()
-
-                        dt_desconto = datas_desconto[0]
-                        dt_futuro = datas_desconto[1]
-
-                        payload = json.dumps(
-                                {
-                                    'deal_price'    : float(novo_valor),
-                                    'start_date'    : dt_desconto,
-                                    'finish_date'   : dt_futuro,
-                                    'promotion_type': 'PRICE_DISCOUNT'
-                                    })
-
-                        url = f'{base}/seller-promotions/items/{produto}?app_version=v2'
-
-                        headers = {'Authorization': f'Bearer {tv}'}
-                        resposta = requests.request('POST', url=url, headers=headers, data=payload)
-
-                        if resposta.status_code == 201:
-                            valor_atualizar_imprimir = str(novo_valor)
-                            valor_imprimir = valor_atualizar_imprimir.replace('.', ',')
-
-                            prc_prd = str(prc_prd)
-                            prc_prd = prc_prd.replace('.', ',')
-
-                            mensagem = f'Desconto recriado: De R$ {prc_prd} por R$ {valor_imprimir}'
-                            msg_imprimir = f'{msg_base} | {mensagem} | {tit_prd}'
-                            msg_dif('green', '', msg_imprimir)
-                            retorno_linha = [vendedor, status, sku_prd, produto, tipo_envio, frete, canal, mensagem,
-                                       tit_prd]
-                            return retorno_linha
-
-                        else:
-                            mensagem = f'Não pôde ser alterado'
-                            msg_imprimir = f'{msg_base} | {mensagem} | {tit_prd}'
-                            msg_dif('red', '', msg_imprimir)
-                            retorno_linha = [vendedor, status, sku_prd, produto, tipo_envio, frete, canal, mensagem,
-                                       tit_prd]
-                            
-                            return retorno_linha
-
-                    else:
-                        retorno_linha = [vendedor, status, sku_prd, produto, tipo_envio, frete, canal, mensagem,
-                                   tit_prd]
-                        return retorno_linha
-
-                else:
-                    mensagem = f'Promoção ativa: De R$ {prc_org_prd} por R$ {prc_prd}'
-                    msg_imprimir = f'{msg_base} | {mensagem} | {tit_prd}'
-                    msg_dif('white', '', msg_imprimir)
-                    retorno_linha.append(mensagem)
-                    return retorno_linha
-
-            else:
-
-                if not supermercado:
-                    if prc_prd < 79 and frete == 'Grátis':
-                        input('Produto com frete grátis abaixo de 79, por favor altere.\n'
-                              'Aperte ENTER para continuar')
-
-                    if prc_prd >= 79:
-                        if novo_valor < 79:
-                            mensagem = f'Não alterar: Desconto abaixo do valor de frete grátis'
-                            msg_imprimir = f'{msg_base} | {mensagem} | {tit_prd}'
-                            msg_dif('white', '', msg_imprimir)
-                            retorno_linha = [vendedor, status, sku_prd, produto, tipo_envio, frete, canal, mensagem,
-                                       tit_prd]
-                            return retorno_linha
-
-                datas_desconto = pegar_datas()
-
-                dt_desconto = datas_desconto[0]
-                dt_futuro = datas_desconto[1]
-
-                payload = json.dumps({
-                    'deal_price': float(novo_valor),
-                    'start_date': dt_desconto,
-                    'finish_date': dt_futuro,
-                    'promotion_type': 'PRICE_DISCOUNT'
-                    })
-
-            url = f'{base}/seller-promotions/items/{produto}?app_version=v2'
-
-            headers = {'Authorization': f'Bearer {tv}'}
-            resposta = requests.request('POST', url=url, headers=headers, data=payload)
-
-            if resposta.status_code == 201:
-                valor_atualizar_imprimir = str(novo_valor)
-                valor_imprimir = valor_atualizar_imprimir.replace('.', ',')
-
-                prc_prd = str(prc_prd)
-                prc_prd = prc_prd.replace('.', ',')
-
-                mensagem = f'Desconto criado: De R$ {prc_prd} por R$ {valor_imprimir}'
-                msg_imprimir = f'{msg_base} | {mensagem} | {tit_prd}'
-                msg_dif('green', '', msg_imprimir)
-                retorno_linha.append(mensagem)
-                return retorno_linha
-
-            else:
-                mensagem = f'Não pôde ser alterado'
-                msg_imprimir = f'{msg_base} | {mensagem} | {tit_prd}'
-                msg_dif('red', '', msg_imprimir)
-                retorno_linha.append(mensagem)
-                return retorno_linha
-
-
-    def pegar_produtos(sku, valor_atualizar, tv, tipo):
-        lista_feitos = []
-        paginas = 0
-        url = f'{base}/users/{id_conta(tv)}/items/search?seller_sku={sku}&offset={paginas}'
-
-        resposta = fazer_reqs(url, tv)
-        quantidade_de_an = resposta['paging']['total']
-
-        if quantidade_de_an == 0:
-            mensagem = 'Nenhum anúncio encontrado'
-            msg_dif('red', '', mensagem)
-            lista_qtd_zero = [mensagem]
-            lista_feitos.append(lista_qtd_zero)
-            return lista_feitos
-
-        else:
-            if quantidade_de_an <= 50:
-                for produto in resposta['results']:
                     feito = atualizar(produto, valor_atualizar, tv, tipo)
                     lista_feitos.append(feito)
 
-            else:
-
-                while quantidade_de_an > 0:
-                    quantidade_de_an -= 50
-                    paginas += 1
-
-                for pagina in range(paginas):
-                    url = f'{base}/users/{id_conta(tv)}/items/search?seller_sku={sku}&offset={(pagina * 50)}'
-
-                    resposta = fazer_reqs(url, tv)
-
-                    for produto in resposta['results']:
-                        feito = atualizar(produto, valor_atualizar, tv, tipo)
-                        lista_feitos.append(feito)
-
-            return lista_feitos
-
-    def get_input():
-        input_user = input(str('> '))
-        input_user = input_user.lower()
-        input_user = input_user.strip()
-        return input_user
+        return lista_feitos
 
 
-    def pegar_sku():
-        print()
-        msg('[Digite VOLTAR para retornar ao menu anterior]')
-        msg_cima('Qual SKU você deseja atualizar?')
-        sku_escolhido_input = input('> ')
-        sku_escolhido_input = sku_escolhido_input.strip()
-        return sku_escolhido_input
+def get_input():
+    input_user = input(str('> '))
+    input_user = input_user.lower()
+    input_user = input_user.strip()
+    return input_user
 
 
-    mensagem_base = (
-        '\n[*] Escolha uma opção'
-        '\n[1] Trocar de conta'
-        '\n[2] Atualizar planilha'
-        '\n[3] Abrir a planilha'
-        '\n[4] Atualizar por SKU'
-        '\n[5] Atualizar por planilha'
-        '\n[6] Mais vendidos por categoria'
-        '\n')
+def pegar_sku():
+    print()
+    msg('[Digite VOLTAR para retornar ao menu anterior]')
+    msg_cima('Qual SKU você deseja atualizar?')
+    sku_escolhido_input = input('> ')
+    sku_escolhido_input = sku_escolhido_input.strip()
+    return sku_escolhido_input
 
-    msg_destaque('Programa feito por @imparcialista  v1.2.2')
-    token = ''
-    msg('Digite SAIR para encerrar o backup')
-    msg(mensagem_base)
+
+def main():
+
+    os.system('CLS')
+    sair = False
+    # msg(mensagem_base)
+    token = configurar_conta()
 
     while not sair:
         escolha = get_input()
 
         if escolha == 'sair':
-            msg_cima('Encerrando o backup...')
+            msg_cima('Encerrando...')
             break
 
         elif escolha == '?' or escolha == 'ajuda':
-            msg('Digite SAIR para encerrar o backup')
+            msg('Digite SAIR para encerrar')
             msg(mensagem_base)
 
         elif escolha == '1' or escolha == 'trocar de conta':
@@ -932,22 +925,22 @@ def main():
                                 sku_escolhido = pegar_sku()
                                 if sku_escolhido != 'voltar':
                                     print()
-                                    valor_para_atualizar = input('Qual o novo estoque?\n> ')
+                                    valor_alterar = input('Qual o novo estoque?\n> ')
 
                                     try:
-                                        valor_para_atualizar = int(valor_para_atualizar)
+                                        valor_alterar = int(valor_alterar)
 
                                     except:
                                         print()
-                                        msg_alerta('[ERRO: Insira apenas números inteiros]')
+                                        msg_alerta('ERRO: Insira apenas números inteiros')
                                         break
 
-                                    msg_cima(f'(SOLICITAÇÃO DE ALTERAÇÃO)')
+                                    msg_cima(f'SOLICITAÇÃO DE ALTERAÇÃO')
                                     print()
                                     msg_dif('white', '',
-                                            f'SKU: {sku_escolhido} | Estoque: {valor_para_atualizar}')
+                                            f'SKU: {sku_escolhido} | Estoque: {valor_alterar}')
 
-                                    pegar_produtos(sku_escolhido, valor_para_atualizar, token, tipo_escolhido)
+                                    pegar_produtos(sku_escolhido, valor_alterar, token, tipo_escolhido)
                                     print()
                                 else:
                                     break
@@ -956,16 +949,16 @@ def main():
                                 sku_escolhido = pegar_sku()
                                 if sku_escolhido != 'voltar':
                                     print()
-                                    valor_para_atualizar = input(str('Qual o novo preço?\n> R$ '))
-                                    valor_para_atualizar = valor_para_atualizar.replace('.', '')
+                                    valor_alterar = input(str('Qual o novo preço?\n> R$ '))
+                                    valor_alterar = valor_alterar.replace('.', '')
 
-                                    msg_dif('white', '', f'(SOLICITAÇÃO DE ALTERAÇÃO)')
+                                    msg_dif('white', '', f'SOLICITAÇÃO DE ALTERAÇÃO')
                                     msg_dif('white', '',
-                                            f'SKU: {sku_escolhido} | Preço: R$ {valor_para_atualizar}')
+                                            f'SKU: {sku_escolhido} | Preço: R$ {valor_alterar}')
 
-                                    valor_para_atualizar = valor_para_atualizar.replace(',', '.')
+                                    valor_alterar = valor_alterar.replace(',', '.')
 
-                                    pegar_produtos(sku_escolhido, valor_para_atualizar, token, tipo_escolhido)
+                                    pegar_produtos(sku_escolhido, valor_alterar, token, tipo_escolhido)
                                     print()
                                 else:
                                     break
@@ -974,18 +967,18 @@ def main():
                                 sku_escolhido = pegar_sku()
                                 if sku_escolhido != 'voltar':
                                     print()
-                                    valor_para_atualizar = input(str('Qual o novo preço com desconto?\n> R$ '))
-                                    valor_para_atualizar = valor_para_atualizar.replace('.', '')
+                                    valor_alterar = input(str('Qual o novo preço com desconto?\n> R$ '))
+                                    valor_alterar = valor_alterar.replace('.', '')
 
                                     msg_dif('white', '', f'(SOLICITAÇÃO DE ALTERAÇÃO)')
 
                                     msg_dif('white', '',
                                             f'SKU: {sku_escolhido} | '
-                                            f'Preço com desconto: R$ {valor_para_atualizar}')
+                                            f'Preço com desconto: R$ {valor_alterar}')
 
-                                    valor_para_atualizar = valor_para_atualizar.replace(',', '.')
+                                    valor_alterar = valor_alterar.replace(',', '.')
 
-                                    pegar_produtos(sku_escolhido, valor_para_atualizar, token, tipo_escolhido)
+                                    pegar_produtos(sku_escolhido, valor_alterar, token, tipo_escolhido)
                                     print()
                                 else:
                                     break
@@ -994,14 +987,14 @@ def main():
                                 sku_escolhido = pegar_sku()
                                 if sku_escolhido != 'voltar':
                                     print()
-                                    valor_para_atualizar = input('Qual o novo SKU?\n> ')
+                                    valor_alterar = input('Qual o novo SKU?\n> ')
 
                                     msg_cima(f'(SOLICITAÇÃO DE ALTERAÇÃO)')
                                     print()
                                     msg_dif('white', '',
-                                            f'SKU antigo: {sku_escolhido} | SKU Novo: {valor_para_atualizar}')
+                                            f'SKU antigo: {sku_escolhido} | SKU Novo: {valor_alterar}')
 
-                                    pegar_produtos(sku_escolhido, valor_para_atualizar, token, tipo_escolhido)
+                                    pegar_produtos(sku_escolhido, valor_alterar, token, tipo_escolhido)
                                     print()
 
                                 else:
@@ -1117,34 +1110,33 @@ def main():
                         if planilha_est:
                             valor_mlb = int(valor_mlb)
 
-                        url_df = (f'{base}/users/{id_conta(token)}/items/search?seller_sku='
-                                  f'{sku_mlb}&offset={0}')
+                        url_df = f'{base}/users/{id_conta(token)}/items/search?seller_sku={sku_mlb}&offset={0}'
 
                         resposta_df = fazer_reqs(url_df, token)
                         qtd_de_an = resposta_df['paging']['total']
                         print()
 
                         if qtd_de_an > 0:
-                            base_print = f'SKU: {sku_mlb} | {qtd_de_an} Anúncio'
+                            base_imp = f'SKU: {sku_mlb} | {qtd_de_an} Anúncio'
 
                             if planilha_prc:
-                                valor_imprimir_novo = str(valor_mlb)
-                                valor_imprimir_novo.replace('.', ',')
-                                complemento = f'Preço: R$ {valor_imprimir_novo}'
+                                valor_imp_novo = str(valor_mlb)
+                                valor_imp_novo.replace('.', ',')
+                                complemento = f'Preço: R$ {valor_imp_novo}'
 
                             elif planilha_des_e_est:
-                                valor_imprimir_novo = str(valor_mlb)
-                                valor_desconto_imprimir = str(valor_desconto)
-                                valor_imprimir_novo.replace('.', ',')
-                                complemento = (f'Preços com desconto | ML R$ {valor_imprimir_novo} | SM R$'
-                                               f' {valor_desconto_imprimir} | Estoque: {est_mlb}')
+                                valor_imp_novo = str(valor_mlb)
+                                valor_desconto_imp = str(valor_desconto)
+                                valor_imp_novo.replace('.', ',')
+                                complemento = (f'Preços com desconto | ML R$ {valor_imp_novo} | SM R$'
+                                               f' {valor_desconto_imp} | Estoque: {est_mlb}')
 
                             elif planilha_des:
-                                valor_imprimir_novo = str(valor_mlb)
-                                valor_desconto_imprimir = str(valor_desconto)
-                                valor_imprimir_novo.replace('.', ',')
-                                complemento = (f'Preços com desconto | ML R$ {valor_imprimir_novo} | SM R$'
-                                               f' {valor_desconto_imprimir}')
+                                valor_imp_novo = str(valor_mlb)
+                                valor_desconto_imp = str(valor_desconto)
+                                valor_imp_novo.replace('.', ',')
+                                complemento = (f'Preços com desconto | ML R$ {valor_imp_novo} | SM R$'
+                                               f' {valor_desconto_imp}')
 
                             elif planilha_sku:
                                 complemento = f'SKU: {valor_mlb}'
@@ -1153,10 +1145,10 @@ def main():
                                 complemento = f'Estoque: {valor_mlb}'
 
                             if qtd_de_an == 1:
-                                msg_dif('white', '', f'{base_print} | {complemento}')
+                                msg_dif('white', '', f'{base_imp} | {complemento}')
 
                             else:
-                                msg_dif('white', '', f'{base_print}s | {complemento}')
+                                msg_dif('white', '', f'{base_imp}s | {complemento}')
 
                             sku_disp.append(sku_mlb)
 
@@ -1230,7 +1222,7 @@ def main():
             retorno_cat = retorno_cat['content']
 
             lista_categoria = []
-            retorno_linha_cat = []
+            linha_ret_cat = []
 
             print('Carregando, por favor aguarde...')
 
@@ -1288,9 +1280,9 @@ def main():
 
                 seller_id_cat = conta_cat
 
-                retorno_linha_cat.append([id_prd_cat, title_prd_cat, seller_id_cat, price_cat, endereco_seller])
+                linha_ret_cat.append([id_prd_cat, title_prd_cat, seller_id_cat, price_cat, endereco_seller])
 
-            df_cat = pd.DataFrame(retorno_linha_cat, columns=['ID MLB', 'TÍTULO', 'LOJA', 'PREÇO', 'ENDEREÇO'])
+            df_cat = pd.DataFrame(linha_ret_cat, columns=['ID MLB', 'TÍTULO', 'LOJA', 'PREÇO', 'ENDEREÇO'])
 
             df_cat.to_excel(f'Categoria-{categoria}.xlsx', index=True)
             print(f'Arquivo gerado Categoria-{categoria}.xlsx')
