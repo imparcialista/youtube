@@ -107,7 +107,7 @@ def fazer_reqs(url, tv):
             else:
                 msg_aviso(f'Tentativa {tentativa} | Falha na requisição')
                 tentativa += 1
-                time.sleep(0.25)
+                time.sleep(1)
 
         else:
             resposta = resposta.json()
@@ -244,8 +244,7 @@ def pegar_todos_ids(tv):
 
 
 def exportar_para_planilha(lista_json: list, colunas_drop: list, tv):
-    arquivo_json = (f'Arquivos/{(nome_conta(tv))}/{id_conta(tv)}'
-                    f'-retorno-produtos.json')
+    arquivo_json = f'Arquivos/{(nome_conta(tv))}/{id_conta(tv)}-retorno-produtos.json'
 
     if os.path.exists(arquivo_json):
         os.remove(arquivo_json)
@@ -454,43 +453,6 @@ def atualizar(produto, valor_atualizar, tv, tipo):
     else:
         status = 'Outro'
 
-    '''
-    # Datas
-    criado = info_prd['date_created']
-    atua = info_prd['last_updated']
-
-    criado_em = f'{criado[8:10]}/{criado[5:7]}/{criado[0:4]} {criado[11:19]}'
-    atualizado_em = f'{atua[8:10]}/{atua[5:7]}/{atua[0:4]} {atua[11:19]}'
-
-    # Saúde
-    porcentagem = info_prd['health']
-    vida_prd = ''
-
-    try:
-        float(porcentagem)
-        vida_prd = f'{(float(porcentagem)) * 100}%'
-
-    except:
-        pass
-
-
-    # Produto de catálogo
-    tipo_de_an = ''
-
-    if info_prd['catalog_listing'] == 'TRUE':
-        tipo_de_an = 'Catálogo'    # Sim
-    else:
-        tipo_de_an = 'Produto'     # Não
-
-    # Produto relacionado
-    prd_relacionado = ''
-
-    if len(info_prd['item_relations']) == 0:
-        prd_relacionado = 'Sem relação'                          # Não
-    else:
-        prd_relacionado = info_prd['item_relations'][0]['id']    # Sim
-    '''
-
     # Canal de venda
     if len(info_prd['channels']) == 2:
         canal = 'Ambos'
@@ -639,23 +601,22 @@ def atualizar(produto, valor_atualizar, tv, tipo):
             linha_ret.append(mensagem)
             return linha_ret
 
+        # Produto possui desconto
         if prc_org_prd != 'None' and prc_org_prd != 'Null':
-            comp_prc = prc_prd
-            prc_prd = str(prc_prd)
+            prc_comparar = prc_prd
 
+            prc_prd = str(prc_prd)
             prc_prd = prc_prd.replace('.', ',')
 
             prc_org_prd = str(prc_org_prd)
             prc_org_prd = prc_org_prd.replace('.', ',')
 
-            if float(novo_valor) < comp_prc:
+            if float(novo_valor) < prc_comparar:
                 if not supermercado:
-                    if comp_prc < 79 and frete == 'Grátis':
-                        input(
-                            'Produto com frete grátis abaixo de 79, por favor altere. Aperte ENTER para '
-                            'continuar')
+                    if prc_comparar < 79 and frete == 'Grátis':
+                        input('Produto com frete grátis abaixo de 79, por favor altere.\nAperte ENTER para continuar')
 
-                    if comp_prc >= 79:
+                    if prc_comparar >= 79:
                         if novo_valor < 79:
                             mensagem = f'Não alterar: Desconto abaixo do valor de frete grátis'
                             msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
@@ -663,6 +624,9 @@ def atualizar(produto, valor_atualizar, tv, tipo):
                             linha_ret.append(mensagem)
                             return linha_ret
 
+                novo_valor_imp = str(novo_valor)
+                novo_valor_imp.replace('.', ',')
+                
                 mensagem = f'Pode ser vendido por: R$ {novo_valor}. Desconto atual: R$ {prc_prd}'
                 msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
                 msg_dif('white', '', msg_imp)
@@ -840,10 +804,8 @@ def pegar_sku():
 
 
 def main():
-
     os.system('CLS')
     sair = False
-    # msg(mensagem_base)
     token = configurar_conta()
 
     while not sair:
@@ -865,6 +827,8 @@ def main():
                 token = configurar_conta()
 
             gerar_planilha(token)
+
+            msg(mensagem_base)
 
         elif escolha == '3' or escolha == 'abrir planilha':
             if token == '':
@@ -891,6 +855,8 @@ def main():
             msg('Abrindo o arquivo...')
             os.startfile(path)
             msg('Arquivo aberto')
+
+            msg(mensagem_base)
 
         elif escolha == '4' or escolha == 'atualizador':
             if token == '':
@@ -970,7 +936,7 @@ def main():
                                     valor_alterar = input(str('Qual o novo preço com desconto?\n> R$ '))
                                     valor_alterar = valor_alterar.replace('.', '')
 
-                                    msg_dif('white', '', f'(SOLICITAÇÃO DE ALTERAÇÃO)')
+                                    msg_dif('white', '', f'SOLICITAÇÃO DE ALTERAÇÃO')
 
                                     msg_dif('white', '',
                                             f'SKU: {sku_escolhido} | '
@@ -989,7 +955,7 @@ def main():
                                     print()
                                     valor_alterar = input('Qual o novo SKU?\n> ')
 
-                                    msg_cima(f'(SOLICITAÇÃO DE ALTERAÇÃO)')
+                                    msg_cima(f'SOLICITAÇÃO DE ALTERAÇÃO')
                                     print()
                                     msg_dif('white', '',
                                             f'SKU antigo: {sku_escolhido} | SKU Novo: {valor_alterar}')
@@ -1009,6 +975,7 @@ def main():
 
                 break
 
+            msg(mensagem_base)
         elif escolha == '5' or escolha == 'atualizar por planilha':
             if token == '':
                 token = configurar_conta()
@@ -1054,10 +1021,10 @@ def main():
                             valor_trocar.append(prc_df)
 
                     elif df_atualizar.columns[1] == 'Desconto ML' or df_atualizar.columns[1] == 'Desconto SM':
-                        msg_cima('Modo atualizar desconto por planilha selecionado')
-                        tipo_escolhido_planilha = 'desconto'
-                        msg_alerta('ATENÇÃO: Produtos com promoção ativa não serão alterados')
                         planilha_des_e_est = True
+                        tipo_escolhido_planilha = 'desconto'
+                        msg_cima('Modo atualizar desconto por planilha selecionado')
+                        msg_alerta('ATENÇÃO: Produtos com promoção ativa não serão alterados')
 
                         for prc_df in df_atualizar['Desconto ML']:
                             valor_trocar.append(prc_df)
@@ -1122,21 +1089,24 @@ def main():
                             if planilha_prc:
                                 valor_imp_novo = str(valor_mlb)
                                 valor_imp_novo.replace('.', ',')
+
                                 complemento = f'Preço: R$ {valor_imp_novo}'
 
                             elif planilha_des_e_est:
                                 valor_imp_novo = str(valor_mlb)
                                 valor_desconto_imp = str(valor_desconto)
                                 valor_imp_novo.replace('.', ',')
-                                complemento = (f'Preços com desconto | ML R$ {valor_imp_novo} | SM R$'
-                                               f' {valor_desconto_imp} | Estoque: {est_mlb}')
+
+                                complemento = (f'Estoque: {est_mlb} | Preço Mercado Livre R$ {valor_imp_novo} | '
+                                               f'Preço Supermercado R$ {valor_desconto_imp}')
 
                             elif planilha_des:
                                 valor_imp_novo = str(valor_mlb)
                                 valor_desconto_imp = str(valor_desconto)
                                 valor_imp_novo.replace('.', ',')
-                                complemento = (f'Preços com desconto | ML R$ {valor_imp_novo} | SM R$'
-                                               f' {valor_desconto_imp}')
+
+                                complemento = (f'Estoque: {est_mlb} | Preço Mercado Livre R$ {valor_imp_novo} | '
+                                               f'Preço Supermercado R$ {valor_desconto_imp}')
 
                             elif planilha_sku:
                                 complemento = f'SKU: {valor_mlb}'
@@ -1244,14 +1214,13 @@ def main():
                     id_prd_cat = prd_cat['buy_box_winner']['item_id']
                     title_prd_cat = prd_cat['name']
                     seller_id_cat = prd_cat['buy_box_winner']['seller_id']
-                    price_cat = prd_cat['buy_box_winner']['price']
 
                 else:
                     id_prd_cat = prd_cat['id']
                     title_prd_cat = prd_cat['title']
                     seller_id_cat = prd_cat['seller_id']
-                    price_cat = prd_cat['buy_box_winner']['price']
 
+                price_cat = prd_cat['buy_box_winner']['price']
                 envio_cat = prd_cat['buy_box_winner']['shipping']['logistic_type']
 
                 if envio_cat == 'cross_docking':
@@ -1264,7 +1233,7 @@ def main():
                     prd_cat['buy_box_winner']['shipping'] = 'Não especificado'
 
                 else:
-                    pass
+                    prd_cat['buy_box_winner']['shipping'] = 'Não especificado'
 
                 seller_address = prd_cat['buy_box_winner']['seller_address']
 
@@ -1286,6 +1255,7 @@ def main():
 
             df_cat.to_excel(f'Categoria-{categoria}.xlsx', index=True)
             print(f'Arquivo gerado Categoria-{categoria}.xlsx')
+            msg(mensagem_base)
 
         else:
             print()
@@ -1294,7 +1264,7 @@ def main():
             if token != '':
                 msg_destaque(f'Conta conectada: {nome_conta(token)}')
 
-            msg(mensagem_base)
+        msg(mensagem_base)
 
 
 if __name__ == '__main__':
