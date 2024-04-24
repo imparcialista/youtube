@@ -134,14 +134,20 @@ def main():
         return conta
 
 
+    def id_conta(tv):
+        id_retorno = fazer_reqs(f'{base}/users/me', tv)
+        id_seller = id_retorno['id']
+        return id_seller
+
+
     def pegar_scroll_id(tv):
-        url = f'{base}/users/{(tv[-9:])}/items/search?search_type=scan&limit=100'
+        url = f'{base}/users/{id_conta(tv)}/items/search?search_type=scan&limit=100'
         resposta = fazer_reqs(url, tv)
         return resposta
 
 
     def proxima_pagina(scroll, tv):
-        url = f'{base}/users/{(tv[-9:])}/items/search?search_type=scan&scroll_id={scroll}&limit=100'
+        url = f'{base}/users/{id_conta(tv)}/items/search?search_type=scan&scroll_id={scroll}&limit=100'
         resposta = fazer_reqs(url, tv)
         return resposta
 
@@ -156,7 +162,7 @@ def main():
         else:
             filtro = ''
 
-        url = f'{base}/users/{(tv[-9:])}/items/search?{filtro}&offset={0}'
+        url = f'{base}/users/{id_conta(tv)}/items/search?{filtro}&offset={0}'
         resposta = fazer_reqs(url, tv)
 
         quantidade_de_an = resposta['paging']['total']
@@ -205,7 +211,7 @@ def main():
                 paginas += 1
 
             for pagina in range(paginas):
-                url = f'{base}/users/{(tv[-9:])}/items/search?{filtro}&offset={pagina * 50}'
+                url = f'{base}/users/{id_conta(tv)}/items/search?{filtro}&offset={pagina * 50}'
 
                 resposta = fazer_reqs(url, tv)
 
@@ -216,7 +222,7 @@ def main():
             os.makedirs(f'Arquivos/{nome_conta(token)}')
             msg_cima(f'Pasta {nome_conta(token)} criada')
 
-        arquivo_json = f'Arquivos/{nome_conta(token)}/{(tv[-9:])}-ids_mlb.json'
+        arquivo_json = f'Arquivos/{nome_conta(token)}/{id_conta(tv)}-ids_mlb.json'
 
         if os.path.exists(arquivo_json):
             os.remove(arquivo_json)
@@ -232,7 +238,7 @@ def main():
 
 
     def exportar_para_planilha(lista_json: list, colunas_drop: list, tv):
-        arquivo_json = (f'Arquivos/{(nome_conta(tv))}/{(tv[-9:])}'
+        arquivo_json = (f'Arquivos/{(nome_conta(tv))}/{id_conta(tv)}'
                         f'-retorno-produtos.json')
 
         if os.path.exists(arquivo_json):
@@ -244,7 +250,7 @@ def main():
         df = pd.read_json(arquivo_json)
         df = df.drop(colunas_drop, axis=1, errors='ignore')
         planilha = (f'Arquivos/{nome_conta(tv)}/'
-                    f'{(tv[-9:])}-planilha-produtos.xlsx')
+                    f'{id_conta(tv)}-planilha-produtos.xlsx')
 
         if os.path.exists(planilha):
             os.remove(planilha)
@@ -259,7 +265,7 @@ def main():
 
 
     def gerar_planilha(tv):
-        ids_mlb = f'Arquivos/{nome_conta(tv)}/{(tv[-9:])}-ids_mlb.json'
+        ids_mlb = f'Arquivos/{nome_conta(tv)}/{id_conta(tv)}-ids_mlb.json'
         lista_retorno = []
         lista_geral = []
         gap_vinte = 0
@@ -801,7 +807,7 @@ def main():
     def pegar_produtos(sku, valor_atualizar, tv, tipo):
         lista_feitos = []
         paginas = 0
-        url = f"{base}/users/{(tv[-9:])}/items/search?seller_sku={sku}&offset={paginas}"
+        url = f"{base}/users/{id_conta(tv)}/items/search?seller_sku={sku}&offset={paginas}"
 
         resposta = fazer_reqs(url, tv)
         quantidade_de_an = resposta['paging']['total']
@@ -826,7 +832,7 @@ def main():
                     paginas += 1
 
                 for pagina in range(paginas):
-                    url = (f"{base}/users/{(tv[-9:])}"
+                    url = (f"{base}/users/{id_conta(tv)}"
                            f"/items/search?seller_sku={sku}&offset={(pagina * 50)}")
 
                     resposta = fazer_reqs(url, tv)
@@ -892,7 +898,7 @@ def main():
             if token == '':
                 token = configurar_conta()
 
-            path = f'Arquivos/{(nome_conta(token))}/{(token[-9:])}-planilha-produtos.xlsx'
+            path = f'Arquivos/{(nome_conta(token))}/{id_conta(token)}-planilha-produtos.xlsx'
 
             if not os.path.exists(path):
                 gerar_planilha(token)
@@ -902,7 +908,7 @@ def main():
             tamanho_planilha = len(df_tamanho['id'])
 
             filtro_4 = ''
-            url_4 = f'{base}/users/{(token[-9:])}/items/search?{filtro_4}&offset={0}'
+            url_4 = f'{base}/users/{id_conta(token)}/items/search?{filtro_4}&offset={0}'
             resposta_4 = fazer_reqs(url_4, token)
             qtd_de_an_4 = resposta_4['paging']['total']
 
@@ -1134,7 +1140,7 @@ def main():
                         if planilha_est:
                             valor_mlb = int(valor_mlb)
 
-                        url_df = (f"{base}/users/{(token[-9:])}/items/search?seller_sku="
+                        url_df = (f"{base}/users/{id_conta(token)}/items/search?seller_sku="
                                   f"{sku_mlb}&offset={0}")
 
                         resposta_df = fazer_reqs(url_df, token)
