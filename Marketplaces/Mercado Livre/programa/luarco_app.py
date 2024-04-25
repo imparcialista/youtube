@@ -1006,6 +1006,9 @@ def main():
                         msg_cima('Modo atualizar estoque por planilha selecionado')
                         tipo_escolhido_planilha = 'estoque'
                         msg_alerta('ATENÇÃO: Produtos que estão oferecendo Full não serão alterados')
+
+                        print('\nMODELO DE PLANILHA')
+                        msg_cima('| SKU | Estoque |')
                         planilha_est = True
 
                         for est_df in df_atualizar['Estoque']:
@@ -1015,6 +1018,9 @@ def main():
                         msg_cima('Modo atualizar preço por planilha selecionado')
                         tipo_escolhido_planilha = 'preço'
                         msg_alerta('ATENÇÃO: Produtos com promoção ativa não serão alterados')
+
+                        print('\nMODELO DE PLANILHA')
+                        msg_cima('| SKU | Preço |')
                         planilha_prc = True
 
                         for prc_df in df_atualizar['Preço']:
@@ -1025,6 +1031,9 @@ def main():
                         tipo_escolhido_planilha = 'desconto'
                         msg_cima('Modo atualizar desconto por planilha selecionado')
                         msg_alerta('ATENÇÃO: Produtos com promoção ativa não serão alterados')
+
+                        print('\nMODELO DE PLANILHA')
+                        msg_cima('| SKU | Desconto ML | Desconto SM | Estoque |')
 
                         for prc_df in df_atualizar['Desconto ML']:
                             valor_trocar.append(prc_df)
@@ -1039,6 +1048,9 @@ def main():
                         msg_cima('Modo atualizar SKUs por planilha selecionado')
                         tipo_escolhido_planilha = 'sku'
                         msg_alerta('ATENÇÃO: A troca de SKUs pode levar um tempo para ser refletida no Mercado Livre')
+
+                        print('\nMODELO DE PLANILHA')
+                        msg_cima('| SKU | SKU Novo |')
                         planilha_sku = True
 
                         for sku_df in df_atualizar['SKU Novo']:
