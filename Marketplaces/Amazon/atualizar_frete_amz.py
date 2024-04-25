@@ -9,7 +9,7 @@ tabela_amz = seu_nome_do_arquivo
 
 df = pd.read_excel(tabela_amz)
 
-substituicao = {
+substituir = {
     'Capital'  : 'Capital)',
     'Interior' : 'Interior)',
     'RO'       : 'Rondônia(Rondônia',
@@ -41,35 +41,7 @@ substituicao = {
     'DF'       : 'Distrito Federal(Distrito Federal'
     }
 
-df = df.replace(substituicao, regex=True)
-
-'''
-lista_escolhas = {}
-
-for linha in range(30):
-    if linha < 3:
-        lista_escolhas.update({ linha : 'escolha_1'})
-    elif linha < 5:
-        lista_escolhas.update({ linha : 'escolha_2'})
-    elif linha < 7:
-        lista_escolhas.update({ linha : 'escolha_3'})
-    elif linha < 9:
-        lista_escolhas.update({ linha : 'escolha_4'})
-    elif linha < 13:
-        lista_escolhas.update({ linha : 'escolha_5'})
-    elif linha < 18:
-        lista_escolhas.update({ linha : 'escolha_6'})
-    elif linha < 22:
-        lista_escolhas.update({ linha : 'escolha_7'})
-    elif linha <= 28:
-        lista_escolhas.update({ linha : 'escolha_8'})
-    else:
-        lista_escolhas.update({ linha : 'escolha_8'})
-
-print(lista_escolhas)
-# aqui você pega o print e coloca no replace abaixo
-
-'''
+df = df.replace(substituir, regex=True)
 
 escolhas = {
     0  : 'escolha_1',
@@ -104,9 +76,7 @@ escolhas = {
     29 : 'escolha_8'
     }
 
-df = df.replace(
-        escolhas
-        )
+df = df.replace(escolhas)
 
 print(df)
 
