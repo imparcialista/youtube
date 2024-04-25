@@ -125,7 +125,7 @@ def configurar_conta():
 
         if resposta.status_code == 200:
             os.system('CLS')
-            msg_destaque('Programa feito por @imparcialista  v1.2.2')
+            msg_destaque('Programa feito por @imparcialista  v1.2.3')
             msg(f'Conta conectada: {nome_conta(tv)}')
             msg(mensagem_base)
             return tv
@@ -402,11 +402,26 @@ def gerar_planilha(tv):
     exportar_para_planilha(lista_retorno, drops, tv)
 
 
+def preco_imprimir(preco):
+    preco = float(preco)
+    preco = f'{preco:.2f}'
+
+    preco = str(preco)
+    preco = preco.replace('.', ',')
+
+    return preco
+
+
 def atualizar(produto, valor_atualizar, tv, tipo):
     url = f'{base}/items/{produto}'
     info_prd = fazer_reqs(url, tv)
     vendedor = nome_conta(tv)
     tit_prd = info_prd['title']
+
+    aviso = 'yellow'
+    sucesso = 'green'
+    erro = 'red'
+    normal = 'white'
 
     # SKU
     atributos = info_prd['attributes']
@@ -471,7 +486,7 @@ def atualizar(produto, valor_atualizar, tv, tipo):
 
     def retorno_linha(msg_ret, cor, lista_linha):
         msg_imprimir = f'{msg_base} | {msg_ret} | {tit_prd}'
-        msg_dif(f'{cor}', '', msg_imprimir)
+        msg_dif(cor, '', msg_imprimir)
         lista_linha.append(msg_ret)
         return lista_linha
 
@@ -484,17 +499,13 @@ def atualizar(produto, valor_atualizar, tv, tipo):
         # Produtos do full não podem ser alterados
         if info_prd['shipping'] == 'Full':
             mensagem = f'Estoque no Full'
-            msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
-            msg_dif('yellow', '', msg_imp)
-            linha_ret.append(mensagem)
+            linha_ret = retorno_linha(mensagem, normal, linha_ret)
             return linha_ret
 
         # Não vamos trocar um valor pelo mesmo valor, nós apenas deixamos como está
         if valor_atualizar == est_prd:
             mensagem = f'Estoque correto'
-            msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
-            msg_dif('white', '', msg_imp)
-            linha_ret.append(mensagem)
+            linha_ret = retorno_linha(mensagem, normal, linha_ret)
             return linha_ret
 
         # Podemos ter produtos com estoque, mas que estejam inativos, nesse caso, vamos tentar atualizar para ativo
@@ -508,16 +519,12 @@ def atualizar(produto, valor_atualizar, tv, tipo):
 
         if resposta.status_code == 200:
             mensagem = f'Estoque alterado de {est_prd} para {valor_atualizar}'
-            msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
-            msg_dif('green', '', msg_imp)
-            linha_ret.append(mensagem)
+            linha_ret = retorno_linha(mensagem, sucesso, linha_ret)
             return linha_ret
 
         else:
             mensagem = f'Não pôde ser alterado'
-            msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
-            msg_dif('red', '', msg_imp)
-            linha_ret.append(mensagem)
+            linha_ret = retorno_linha(mensagem, erro, linha_ret)
             return linha_ret
 
     elif tipo == 'preço':
@@ -528,23 +535,13 @@ def atualizar(produto, valor_atualizar, tv, tipo):
         # Não vamos trocar um valor pelo mesmo valor, nós apenas deixamos como está
         if valor_atualizar == prc_prd:
             mensagem = f'Preço correto'
-            msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
-            msg_dif('white', '', msg_imp)
-            linha_ret.append(mensagem)
+            linha_ret = retorno_linha(mensagem, normal, linha_ret)
             return linha_ret
 
         # Caso contrário, vamos informar o desconto que está ativo e não atualizar
         if prc_org_prd != 'None' and prc_org_prd != 'Null':
-            prc_prd = str(prc_prd)
-            prc_prd = prc_prd.replace('.', ',')
-
-            prc_org_prd = str(prc_org_prd)
-            prc_org_prd = prc_org_prd.replace('.', ',')
-
-            mensagem = f'Desconto ativo: De R$ {prc_org_prd} por R$ {prc_prd}'
-            msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
-            msg_dif('white', '', msg_imp)
-            linha_ret.append(mensagem)
+            mensagem = f'Desconto ativo: De R$ {preco_imprimir(prc_org_prd)} por R$ {preco_imprimir(prc_prd)}'
+            linha_ret = retorno_linha(mensagem, normal, linha_ret)
             return linha_ret
 
         # Caso o valor de preço original esteja vazio, podemos atualizar
@@ -555,23 +552,13 @@ def atualizar(produto, valor_atualizar, tv, tipo):
         resposta = requests.put(url=url, headers=headers, data=payload)
 
         if resposta.status_code == 200:
-            valor_atualizar_imp = str(valor_atualizar)
-            valor_imp = valor_atualizar_imp.replace('.', ',')
-
-            prc_prd = str(prc_prd)
-            prc_prd = prc_prd.replace('.', ',')
-
-            mensagem = f'Preço alterado de R$ {prc_prd} para R$ {valor_imp}'
-            msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
-            msg_dif('green', '', msg_imp)
-            linha_ret.append(mensagem)
+            mensagem = f'Preço alterado de R$ {preco_imprimir(prc_prd)} para R$ {preco_imprimir(valor_atualizar)}'
+            linha_ret = retorno_linha(mensagem, sucesso, linha_ret)
             return linha_ret
 
         else:
             mensagem = f'Não pôde ser alterado'
-            msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
-            msg_dif('red', '', msg_imp)
-            linha_ret.append(mensagem)
+            linha_ret = retorno_linha(mensagem, erro, linha_ret)
             return linha_ret
 
     elif tipo == 'sku':
@@ -582,16 +569,12 @@ def atualizar(produto, valor_atualizar, tv, tipo):
 
         if resposta.status_code == 200:
             mensagem = f'SKU novo: {valor_atualizar}'
-            msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
-            msg_dif('green', '', msg_imp)
-            linha_ret.append(mensagem)
+            linha_ret = retorno_linha(mensagem, sucesso, linha_ret)
             return linha_ret
 
         else:
             mensagem = f'Não pôde ser alterado'
-            msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
-            msg_dif('red', '', msg_imp)
-            linha_ret.append(mensagem)
+            linha_ret = retorno_linha(mensagem, erro, linha_ret)
             return linha_ret
 
     elif tipo == 'desconto':
@@ -615,20 +598,18 @@ def atualizar(produto, valor_atualizar, tv, tipo):
 
         if status != 'Ativo':
             mensagem = f'Anúncio inativo'
-            msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
-            msg_dif('white', '', msg_imp)
-            linha_ret.append(mensagem)
+            linha_ret = retorno_linha(mensagem, normal, linha_ret)
             return linha_ret
 
         # Produto possui desconto
         if prc_org_prd != 'None' and prc_org_prd != 'Null':
             prc_comparar = prc_prd
 
-            prc_prd = str(prc_prd)
-            prc_prd = prc_prd.replace('.', ',')
+            # prc_prd = str(prc_prd)
+            # prc_prd = prc_prd.replace('.', ',')
 
-            prc_org_prd = str(prc_org_prd)
-            prc_org_prd = prc_org_prd.replace('.', ',')
+            # prc_org_prd = str(prc_org_prd)
+            # prc_org_prd = prc_org_prd.replace('.', ',')
 
             if float(novo_valor) < prc_comparar:
                 if not supermercado:
@@ -638,18 +619,11 @@ def atualizar(produto, valor_atualizar, tv, tipo):
                     if prc_comparar >= 79:
                         if novo_valor < 79:
                             mensagem = f'Não alterar: Desconto abaixo do valor de frete grátis'
-                            msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
-                            msg_dif('white', '', msg_imp)
-                            linha_ret.append(mensagem)
+                            linha_ret = retorno_linha(mensagem, normal, linha_ret)
                             return linha_ret
-
-                novo_valor_imp = str(novo_valor)
-                novo_valor_imp.replace('.', ',')
                 
-                mensagem = f'Pode ser vendido por: R$ {novo_valor}. Desconto atual: R$ {prc_prd}'
-                msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
-                msg_dif('white', '', msg_imp)
-
+                mensagem = (f'Pode ser vendido por: R$ {preco_imprimir(novo_valor)}. Desconto atual: R$ '
+                            f'{preco_imprimir(prc_prd)}')
                 modo_safe = True
 
                 if modo_safe:
@@ -683,39 +657,26 @@ def atualizar(produto, valor_atualizar, tv, tipo):
                     resposta = requests.request('POST', url=url, headers=headers, data=payload)
 
                     if resposta.status_code == 201:
-                        valor_atualizar_imp = str(novo_valor)
-                        valor_imp = valor_atualizar_imp.replace('.', ',')
-
-                        prc_prd = str(prc_prd)
-                        prc_prd = prc_prd.replace('.', ',')
-
-                        mensagem = f'Desconto recriado: De R$ {prc_prd} por R$ {valor_imp}'
-                        msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
-                        msg_dif('green', '', msg_imp)
-                        linha_ret.append(mensagem)
+                        mensagem = (f'Desconto recriado: De R$ {preco_imprimir(prc_prd)} por R$ '
+                                    f'{preco_imprimir(novo_valor)}')
+                        linha_ret = retorno_linha(mensagem, sucesso, linha_ret)
                         return linha_ret
 
                     else:
                         mensagem = f'Não pôde ser alterado'
-                        msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
-                        msg_dif('red', '', msg_imp)
-                        linha_ret.append(mensagem)
-
+                        linha_ret = retorno_linha(mensagem, erro, linha_ret)
                         return linha_ret
 
                 else:
-                    linha_ret.append(mensagem)
+                    linha_ret = retorno_linha(mensagem, normal, linha_ret)
                     return linha_ret
 
             else:
-                mensagem = f'Promoção ativa: De R$ {prc_org_prd} por R$ {prc_prd}'
-                msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
-                msg_dif('white', '', msg_imp)
-                linha_ret.append(mensagem)
+                mensagem = f'Promoção ativa: De R$ {preco_imprimir(prc_org_prd)} por R$ {preco_imprimir(prc_prd)}'
+                linha_ret = retorno_linha(mensagem, normal, linha_ret)
                 return linha_ret
 
         else:
-
             if not supermercado:
                 if prc_prd < 79 and frete == 'Grátis':
                     input('Produto com frete grátis abaixo de 79, por favor altere.\nAperte ENTER para continuar')
@@ -723,9 +684,7 @@ def atualizar(produto, valor_atualizar, tv, tipo):
                 if prc_prd >= 79:
                     if novo_valor < 79:
                         mensagem = f'Não alterar: Desconto abaixo do valor de frete grátis'
-                        msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
-                        msg_dif('white', '', msg_imp)
-                        linha_ret.append(mensagem)
+                        linha_ret = retorno_linha(mensagem, normal, linha_ret)
                         return linha_ret
 
             datas_desconto = pegar_datas()
@@ -747,23 +706,13 @@ def atualizar(produto, valor_atualizar, tv, tipo):
         resposta = requests.request('POST', url=url, headers=headers, data=payload)
 
         if resposta.status_code == 201:
-            valor_atualizar_imp = str(novo_valor)
-            valor_imp = valor_atualizar_imp.replace('.', ',')
-
-            prc_prd = str(prc_prd)
-            prc_prd = prc_prd.replace('.', ',')
-
-            mensagem = f'Desconto criado: De R$ {prc_prd} por R$ {valor_imp}'
-            msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
-            msg_dif('green', '', msg_imp)
-            linha_ret.append(mensagem)
+            mensagem = f'Desconto criado: De R$ {preco_imprimir(prc_prd)} por R$ {preco_imprimir(novo_valor)}'
+            linha_ret = retorno_linha(mensagem, sucesso, linha_ret)
             return linha_ret
 
         else:
             mensagem = f'Não pôde ser alterado'
-            msg_imp = f'{msg_base} | {mensagem} | {tit_prd}'
-            msg_dif('red', '', msg_imp)
-            linha_ret.append(mensagem)
+            linha_ret = retorno_linha(mensagem, erro, linha_ret)
             return linha_ret
 
 
@@ -939,7 +888,8 @@ def main():
 
                                     msg_dif('white', '', f'SOLICITAÇÃO DE ALTERAÇÃO')
                                     msg_dif('white', '',
-                                            f'SKU: {sku_escolhido} | Preço: R$ {valor_alterar}')
+                                            f'SKU: {sku_escolhido} | '
+                                            f'Preço: R$ {preco_imprimir(valor_alterar)}')
 
                                     valor_alterar = valor_alterar.replace(',', '.')
 
@@ -958,8 +908,8 @@ def main():
                                     msg_dif('white', '', f'SOLICITAÇÃO DE ALTERAÇÃO')
 
                                     msg_dif('white', '',
-                                            f'SKU: {sku_escolhido} | '
-                                            f'Preço com desconto: R$ {valor_alterar}')
+                                            f'SKU: {sku_escolhido} | Preço com desconto: R$'
+                                            f' {preco_imprimir(valor_alterar)}')
 
                                     valor_alterar = valor_alterar.replace(',', '.')
 
@@ -995,6 +945,7 @@ def main():
                 break
 
             msg(mensagem_base)
+
         elif escolha == '5' or escolha == 'atualizar por planilha':
             if token == '':
                 token = configurar_conta()
@@ -1117,27 +1068,28 @@ def main():
                         if qtd_de_an > 0:
                             base_imp = f'SKU: {sku_mlb} | {qtd_de_an} Anúncio'
 
-                            if planilha_prc:
-                                valor_imp_novo = str(valor_mlb)
-                                valor_imp_novo.replace('.', ',')
+                            valor_imp_novo = str(valor_mlb)
 
-                                complemento = f'Preço: R$ {valor_imp_novo}'
+                            if planilha_prc:
+                                # valor_imp_novo.replace('.', ',')
+
+                                complemento = f'Preço: R$ {preco_imprimir(valor_imp_novo)}'
 
                             elif planilha_des_e_est:
-                                valor_imp_novo = str(valor_mlb)
                                 valor_desconto_imp = str(valor_desconto)
                                 valor_imp_novo.replace('.', ',')
 
-                                complemento = (f'Estoque: {est_mlb} | Preço Mercado Livre R$ {valor_imp_novo} | '
-                                               f'Preço Supermercado R$ {valor_desconto_imp}')
+                                complemento = (f'Estoque: {est_mlb} | '
+                                               f'Preço Mercado Livre R$ {preco_imprimir(valor_imp_novo)} | '
+                                               f'Preço Supermercado R$ {preco_imprimir(valor_desconto_imp)}')
 
                             elif planilha_des:
-                                valor_imp_novo = str(valor_mlb)
                                 valor_desconto_imp = str(valor_desconto)
                                 valor_imp_novo.replace('.', ',')
 
-                                complemento = (f'Estoque: {est_mlb} | Preço Mercado Livre R$ {valor_imp_novo} | '
-                                               f'Preço Supermercado R$ {valor_desconto_imp}')
+                                complemento = (f'Estoque: {est_mlb} | '
+                                               f'Preço Mercado Livre R$ {preco_imprimir(valor_imp_novo)} | '
+                                               f'Preço Supermercado R$ {preco_imprimir(valor_desconto_imp)}')
 
                             elif planilha_sku:
                                 complemento = f'SKU: {valor_mlb}'
@@ -1163,7 +1115,6 @@ def main():
                                 valor_mlb = [valor_mlb, valor_desconto]
 
                             registro_sku = pegar_produtos(sku_mlb, valor_mlb, token, tipo_escolhido_planilha)
-
                             registros.append(registro_sku)
 
                         else:
@@ -1171,9 +1122,9 @@ def main():
                             msg_alerta(registro_nenhum_an)
                             sku_nao_disp.append(sku_mlb)
 
-                            registro_nenhum_an = ''
-                            lista_reg_zero = [registro_nenhum_an]
-                            registros.append(lista_reg_zero)
+                            # registro_nenhum_an = ''
+                            # lista_reg_zero = [registro_nenhum_an]
+                            # registros.append(lista_reg_zero)
 
                     msg(f'\nSKUs encontrados: {sku_disp}')
                     msg(f'\nSKUs não encontrados: {sku_nao_disp}\n')
@@ -1194,7 +1145,11 @@ def main():
                                                  columns=['Vendedor', 'Status', 'SKU', 'Código', 'Envio', 'Frete',
                                                           'Canal', 'Título', 'Descrição'])
 
-                    nova_planilha.to_excel(f'Registros-{nome_conta(token)}.xlsx', index=False)
+                    data_registro = pegar_datas()
+                    data_registro = data_registro[0]
+                    data_registro = data_registro[:10]
+
+                    nova_planilha.to_excel(f'{data_registro}-{nome_conta(token)}.xlsx', index=False)
                     print(f'Arquivo gerado Registros.xlsx')
 
                 elif continuar == '2':
@@ -1205,9 +1160,6 @@ def main():
 
             else:
                 msg_alerta('Você não selecionou nenhum arquivo')
-
-            msg('Digite SAIR para encerrar o programa')
-            msg(mensagem_base)
 
         elif escolha == '6':
             if token == '':
