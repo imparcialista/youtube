@@ -24,9 +24,6 @@ mensagem_base = (
 
 
 def pegar_datas():
-    # Exemplo de pegar data que peguei da alura
-    # https://www.alura.com.br/artigos/lidando-com-datas-e-horarios-no-python
-
     datas = []
 
     data_e_hora_atuais = datetime.now()
@@ -605,12 +602,6 @@ def atualizar(produto, valor_atualizar, tv, tipo):
         if prc_org_prd != 'None' and prc_org_prd != 'Null':
             prc_comparar = prc_prd
 
-            # prc_prd = str(prc_prd)
-            # prc_prd = prc_prd.replace('.', ',')
-
-            # prc_org_prd = str(prc_org_prd)
-            # prc_org_prd = prc_org_prd.replace('.', ',')
-
             if float(novo_valor) < prc_comparar:
                 if not supermercado:
                     if prc_comparar < 79 and frete == 'Grátis':
@@ -1071,8 +1062,6 @@ def main():
                             valor_imp_novo = str(valor_mlb)
 
                             if planilha_prc:
-                                # valor_imp_novo.replace('.', ',')
-
                                 complemento = f'Preço: R$ {preco_imprimir(valor_imp_novo)}'
 
                             elif planilha_des_e_est:
@@ -1121,10 +1110,6 @@ def main():
                             registro_nenhum_an = f'SKU: {sku_mlb} | Nenhum anúncio encontrado'
                             msg_alerta(registro_nenhum_an)
                             sku_nao_disp.append(sku_mlb)
-
-                            # registro_nenhum_an = ''
-                            # lista_reg_zero = [registro_nenhum_an]
-                            # registros.append(lista_reg_zero)
 
                     msg(f'\nSKUs encontrados: {sku_disp}')
                     msg(f'\nSKUs não encontrados: {sku_nao_disp}\n')
